@@ -28,6 +28,17 @@ class AuthController extends GetxController {
     print('Token saved: $token');
   }
 
+  Future<String?> _getCachedUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('pb_user_id');
+  }
+
+  Future<void> _saveUserId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pb_user_id', id);
+    print('User ID saved: $id');
+  }
+
   Future<void> _loadCachedToken() async {
     final cachedToken = await _getCachedToken();
     if (cachedToken != null) {
@@ -38,11 +49,25 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<void> _loadCachedUserId() async {
+    final cachedUserId = await _getCachedUserId();
+    if (cachedUserId != null) {
+      userId.value = cachedUserId; // Set User ID from cache
+      print('Cached User ID loaded: $cachedUserId');
+    } else {
+      print('No cached User ID found.');
+    }
+  }
+
   Future<void> checkAuth() async {
     await _loadCachedToken();
+    await _loadCachedUserId(); // Load cached User ID
     if (pb.authStore.isValid) {
       print('User is already logged in (Token: ${pb.authStore.token})');
-      userId.value = pb.authStore.record?.id; // Set User ID in controller
+      if (userId.value == null) {
+        userId.value = pb.authStore.record?.id; // Set User ID if not loaded from cache yet (fallback)
+        _saveUserId(userId.value!); // Ensure User ID is saved if it wasn't cached before
+      }
       isLoggedIn.value = true;
       Get.offAll(() => const HomePage()); // Use GetX navigation
     } else {
@@ -68,6 +93,7 @@ class AuthController extends GetxController {
       userId.value = pb.authStore.record?.id; // Set User ID in controller
       isLoggedIn.value = true;
       await _saveToken(pb.authStore.token); // Save token
+      await _saveUserId(userId.value!); // Save User ID to cache
       Get.offAll(() => const HomePage()); // Use GetX navigation
     } catch (e) {
       print('Login Error: $e');
@@ -81,6 +107,7 @@ class AuthController extends GetxController {
     pb.authStore.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('pb_auth_token');
+    await prefs.remove('pb_user_id'); // Remove User ID from cache on logout
     userId.value = null;
     isLoggedIn.value = false;
     Get.offAll(() => const LoginPage()); // Navigate to LoginPage after logout
