@@ -26,7 +26,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Sensor Monitoring Data')),
       body: Center(
-      child: Text('Faults Page', style: TextStyle(fontSize: 24)),
+      child: Text('Monitoring Page', style: TextStyle(fontSize: 24)),
     
       ),
     );
