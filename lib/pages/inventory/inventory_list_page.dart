@@ -1,39 +1,21 @@
-// inventory_page.dart
+// inventory_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:inventory_management/main.dart'; // Import pb
-import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
+import 'package:inventory_management/main.dart';
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
-import 'package:inventory_management/utils/auth/auth_controller.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-class InventoryPage extends StatefulWidget {
-  const InventoryPage({super.key});
+class InventoryListPage extends StatefulWidget {
+  const InventoryListPage({super.key});
 
   @override
-  State<InventoryPage> createState() => _InventoryPageState();
+  State<InventoryListPage> createState() => _InventoryListPageState();
 }
 
-class _InventoryPageState extends State<InventoryPage> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _itemNameController = TextEditingController();
-  final TextEditingController _itemCostPriceController = TextEditingController();
-  final TextEditingController _itemSalesPriceController = TextEditingController();
-  final TextEditingController _eanCodeController = TextEditingController();
-  final TextEditingController _aboutProductController = TextEditingController();
-  final TextEditingController _productSpecificationController = TextEditingController();
-  final TextEditingController _imageLinkController = TextEditingController();
-  final TextEditingController _stockController = TextEditingController();
-
-  bool _isCreatingInventory = false;
-  String _errorMessage = '';
-  bool _showForm = false;
+class _InventoryListPageState extends State<InventoryListPage> {
   List<RecordModel> _inventoryItems = [];
   bool _isLoadingItems = false;
+  String _errorMessage = '';
   bool _isDeletingItem = false;
-  bool _isUpdatingItem = false;
-  RecordModel? _editingItem;
-
   int _currentPage = 1;
   int _perPage = 6;
   int _totalPages = 1;
@@ -41,19 +23,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _fetchInventoryItems(); // Fetch items on page load
-  }
-
-  Future<void> _createInventoryItem() async {
-    // Navigate to CreateInventoryItemPage
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateInventoryItemPage()),
-    ).then((value) {
-      if (value == true) {
-        _fetchInventoryItems(); // Refresh list after successful creation
-      }
-    });
+    _fetchInventoryItems();
   }
 
   Future<void> _fetchInventoryItems() async {
@@ -135,61 +105,32 @@ class _InventoryPageState extends State<InventoryPage> {
     }
   }
 
-  Future<void> _updateInventoryItem(RecordModel item) async {
-    // Navigate to UpdateInventoryItemPage
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => UpdateInventoryItemPage(item: item)),
-    ).then((value) {
-      if (value == true) {
-        _fetchInventoryItems(); // Refresh list after successful update
-      }
-    });
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory'),
+        title: const Text('Inventory List'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: _isCreatingInventory ? null : _createInventoryItem, // Navigate to create page
-                  child: _isCreatingInventory
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text('Create Item'),
-                ),
-                ElevatedButton(
-                  onPressed: _isLoadingItems ? null : () {
-                    setState(() {
-                      _currentPage = 1;
-                    });
-                    _fetchInventoryItems();
-                  },
-                  child: _isLoadingItems
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text('Refresh Items'), // Changed text to Refresh
-                ),
-              ],
+            ElevatedButton( // Refresh Button
+              onPressed: _isLoadingItems ? null : () {
+                setState(() {
+                  _currentPage = 1;
+                });
+                _fetchInventoryItems();
+              },
+              child: _isLoadingItems
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : const Text('Refresh Items'),
             ),
-
             const SizedBox(height: 20),
             if (_errorMessage.isNotEmpty)
               Padding(
@@ -259,7 +200,18 @@ class _InventoryPageState extends State<InventoryPage> {
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.blue),
                                 iconSize: 20,
-                                onPressed: () => _updateInventoryItem(item), // Navigate to edit page
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => UpdateInventoryItemPage(item: item),
+                                    ),
+                                  ).then((value) {
+                                    if (value == true) {
+                                      _fetchInventoryItems(); // Refresh list after update
+                                    }
+                                  });
+                                },
                               ),
                             ],
                           ),
