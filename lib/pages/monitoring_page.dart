@@ -84,9 +84,9 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
 
   void _subscribeToInventoryChanges() {
     pb.collection('inventory').subscribe('*', (e) {
-      print('Realtime event action: ${e.action}');
-      print('Realtime event record: ${e.record?.id}');
-      _fetchInventoryItems(); // Re-fetch data on any inventory change
+      setState(() {
+        _fetchInventoryItems(); // Re-fetch data on any inventory change
+      });
     },);
   }
 
@@ -100,60 +100,66 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
       appBar: AppBar(
         title: const Text('Inventory Dashboard'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Wrap( // Dashboard Tiles
-              spacing: 20.0,
-              runSpacing: 20.0,
-              alignment: WrapAlignment.center,
+      body: Center( // Center the content
+        child: ConstrainedBox( // Limit max width
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, // Align column content to start
               children: [
-                _buildDashboardTile(
-                  theme: theme,
-                  title: 'Total Items in Stock',
-                  value: _totalStock.toString(),
-                  icon: Icons.inventory,
-                  color: Colors.blue,
+                Wrap( // Dashboard Tiles
+                  spacing: 20.0,
+                  runSpacing: 20.0,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    _buildDashboardTile(
+                      theme: theme,
+                      title: 'Total Items in Stock',
+                      value: _totalStock.toString(),
+                      icon: Icons.inventory,
+                      color: Colors.blue,
+                    ),
+                    _buildDashboardTile(
+                      theme: theme,
+                      title: 'Total Inventory Cost',
+                      value: currencyFormat.format(_totalInventoryCost),
+                      icon: Icons.price_change,
+                      color: Colors.green,
+                    ),
+                    _buildDashboardTile(
+                      theme: theme,
+                      title: 'Total Inventory Sales Value',
+                      value: currencyFormat.format(_totalInventorySalesValue),
+                      icon: Icons.attach_money,
+                      color: Colors.teal,
+                    ),
+                    _buildDashboardTile(
+                      theme: theme,
+                      title: 'Total Unique Items',
+                      value: _totalItemsCount.toString(),
+                      icon: Icons.format_list_numbered,
+                      color: Colors.orange,
+                    ),
+                  ],
                 ),
-                _buildDashboardTile(
-                  theme: theme,
-                  title: 'Total Inventory Cost',
-                  value: currencyFormat.format(_totalInventoryCost),
-                  icon: Icons.price_change,
-                  color: Colors.green,
-                ),
-                _buildDashboardTile(
-                  theme: theme,
-                  title: 'Total Inventory Sales Value',
-                  value: currencyFormat.format(_totalInventorySalesValue),
-                  icon: Icons.attach_money,
-                  color: Colors.teal,
-                ),
-                _buildDashboardTile(
-                  theme: theme,
-                  title: 'Total Unique Items',
-                  value: _totalItemsCount.toString(),
-                  icon: Icons.format_list_numbered,
-                  color: Colors.orange,
-                ),
+                const SizedBox(height: 20),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                if (_inventoryItems.isEmpty && _errorMessage.isEmpty && !_isLoadingItems)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 20.0),
+                    child: Text('No inventory items available to display dashboard.'),
+                  ),
               ],
             ),
-            const SizedBox(height: 20),
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            if (_inventoryItems.isEmpty && _errorMessage.isEmpty && !_isLoadingItems)
-              const Padding(
-                padding: EdgeInsets.only(top: 20.0),
-                child: Text('No inventory items available to display dashboard.'),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -183,19 +189,32 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column( // Main Column for vertical arrangement
+        crossAxisAlignment: CrossAxisAlignment.center, // Center items horizontally in the column
         children: [
-          Icon(icon, size: 40, color: color),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: theme.textTheme.titleLarge,
+          Row( // Row for Icon and Title
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(width: 10), // Spacing between icon and title
+              Expanded( // Use Expanded to make the title take remaining space
+                child: Text(
+                  title,
+                  textAlign: TextAlign.start, // Align title text to start
+                  style: theme.textTheme.titleLarge,
+                  maxLines: 2, // Limit title to two lines
+                  overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface),
+          const SizedBox(height: 8), // Spacing between title row and value
+          FittedBox( // Make value text resizable
+            fit: BoxFit.scaleDown, // Scale down if text is too large
+            child: Text(
+              value,
+              textAlign: TextAlign.center, // Center value text
+              style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface),
+            ),
           ),
         ],
       ),
