@@ -1,9 +1,10 @@
+// inventory_page.dart
 import 'package:flutter/material.dart';
-import 'package:inventory_management/main.dart'; // Import pb
+import 'package:inventory_management/main.dart';
 import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:intl/intl.dart'; // Import intl for number formatting
+import 'package:intl/intl.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -16,26 +17,28 @@ class _InventoryPageState extends State<InventoryPage> {
   bool _isCreatingInventory = false;
   String _errorMessage = '';
   List<RecordModel> _inventoryItems = [];
+  List<RecordModel> _filteredInventoryItems = [];
   bool _isLoadingItems = false;
   bool _isDeletingItem = false;
-  int _displayedItemCount = 10; // Initial number of items to display
-  int _loadMoreIncrement = 10; // Number of items to load on "Load More"
+  int _displayedItemCount = 10;
+  int _loadMoreIncrement = 10;
   bool _hasMoreToLoad = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchInventoryItems(); // Fetch items on page load
+    _fetchInventoryItems();
   }
 
   Future<void> _createInventoryItem() async {
-    // Navigate to CreateInventoryItemPage
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateInventoryItemPage()),
     ).then((value) {
       if (value == true) {
-        _fetchInventoryItems(); // Refresh list after successful creation
+        _fetchInventoryItems();
       }
     });
   }
@@ -45,13 +48,12 @@ class _InventoryPageState extends State<InventoryPage> {
       _isLoadingItems = true;
       _errorMessage = '';
       _inventoryItems = [];
-      _hasMoreToLoad = false; // Reset on refresh
-      _displayedItemCount = _loadMoreIncrement; // Reset display count
+      _filteredInventoryItems = [];
     });
 
     try {
       final resultList = await pb.collection('inventory').getList(
-        page: 1, // Fetch all items in one go for "Load More" functionality
+        page: 1,
         perPage: 500,
         sort: '-created',
         expand: 'user',
@@ -59,7 +61,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
       setState(() {
         _inventoryItems = resultList.items;
-        _hasMoreToLoad = _inventoryItems.length > _displayedItemCount;
+        _filterInventoryItems();
       });
       print('Fetched ${_inventoryItems.length} inventory items.');
     } catch (e) {
@@ -72,6 +74,26 @@ class _InventoryPageState extends State<InventoryPage> {
         _isLoadingItems = false;
       });
     }
+  }
+
+  void _filterInventoryItems() {
+    List<RecordModel> results = [];
+    if (_searchQuery.isEmpty) {
+      results = _inventoryItems.take(_displayedItemCount).toList();
+    } else {
+      results = _inventoryItems
+          .where((item) =>
+              item.getStringValue('product_name').toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              item.getStringValue('EAN_code').toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              item.getStringValue('about_product').toLowerCase().contains(_searchQuery.toLowerCase()))
+          .take(_displayedItemCount)
+          .toList();
+    }
+
+    setState(() {
+      _filteredInventoryItems = results;
+      _hasMoreToLoad = _searchQuery.isEmpty ? _inventoryItems.length > _displayedItemCount : false;
+    });
   }
 
   Future<void> _deleteInventoryItem(String recordId) async {
@@ -121,14 +143,13 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<void> _updateInventoryItem(RecordModel item) async {
-    // Navigate to UpdateInventoryItemPage
     Navigator.push(
       context,
       MaterialPageRoute(
           builder: (context) => UpdateInventoryItemPage(item: item)),
     ).then((value) {
       if (value == true) {
-        _fetchInventoryItems(); // Refresh list after successful update
+        _fetchInventoryItems();
       }
     });
   }
@@ -136,132 +157,270 @@ class _InventoryPageState extends State<InventoryPage> {
   void _loadMoreItems() {
     setState(() {
       _displayedItemCount += _loadMoreIncrement;
-      if (_displayedItemCount >= _inventoryItems.length) {
-        _displayedItemCount = _inventoryItems.length;
-        _hasMoreToLoad = false;
-      } else {
-        _hasMoreToLoad = true;
-      }
+      _filterInventoryItems();
+      _hasMoreToLoad = _searchQuery.isEmpty && _inventoryItems.length > _displayedItemCount;
     });
+  }
+
+  void _showItemDetailsBottomSheet(RecordModel item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return InventoryItemBottomSheet(item: item, onRefresh: _fetchInventoryItems, onDelete: _deleteInventoryItem, onUpdate: _updateInventoryItem);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Search items...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _displayedItemCount = _loadMoreIncrement;
+                      _hasMoreToLoad = false;
+                      _filterInventoryItems();
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _isCreatingInventory ? null : _createInventoryItem,
+                      child: _isCreatingInventory
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white),
+                            )
+                          : const Text('Create Item'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _isLoadingItems
+                          ? null
+                          : () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                                _displayedItemCount = _loadMoreIncrement;
+                                _hasMoreToLoad = false;
+                              });
+                              _fetchInventoryItems();
+                            },
+                      child: _isLoadingItems
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white),
+                            )
+                          : const Text('Refresh Items'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                if (_filteredInventoryItems.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 20.0,
+                        mainAxisSpacing: 20.0,
+                        childAspectRatio: 1.0,
+                      ),
+                      itemCount: _filteredInventoryItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _filteredInventoryItems[index];
+                        return _buildInventoryTile(context, theme, currencyFormat, item);
+                      },
+                    ),
+                  ),
+                if (_isLoadingItems && _inventoryItems.isEmpty && _errorMessage.isEmpty)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                if (_filteredInventoryItems.isEmpty && _errorMessage.isEmpty && !_isLoadingItems && _searchQuery.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 20.0),
+                    child: Text('No inventory items found matching your search.'),
+                  ),
+                if (_inventoryItems.isNotEmpty && _filteredInventoryItems.isEmpty && _errorMessage.isEmpty && _searchQuery.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 20.0),
+                    child: Text('No inventory items available.'),
+                  ),
+                if (_inventoryItems.isNotEmpty && _hasMoreToLoad && _searchQuery.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: ElevatedButton(
+                      onPressed: _isLoadingItems ? null : _loadMoreItems,
+                      child: _isLoadingItems
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white),
+                            )
+                          : const Text('Load More'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInventoryTile(
+      BuildContext context, ThemeData theme, NumberFormat currencyFormat, RecordModel item) {
+    return GestureDetector(
+      onTap: () => _showItemDetailsBottomSheet(item),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(10.0),
+          border: Border.all(color: Colors.grey.shade400),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 7,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, // Changed to CrossAxisAlignment.start
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              item.getStringValue('product_name'),
+              textAlign: TextAlign.left, // Align text to left
+              style: theme.textTheme.titleLarge,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Cost: ${currencyFormat.format(item.getDoubleValue('item_cost_price'))}',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class InventoryItemBottomSheet extends StatelessWidget {
+  final RecordModel item;
+  final VoidCallback onRefresh;
+  final Function(String) onDelete;
+  final Function(RecordModel) onUpdate;
+
+  const InventoryItemBottomSheet({super.key, required this.item, required this.onRefresh, required this.onDelete, required this.onUpdate});
+
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                ElevatedButton(
-                  onPressed:
-                      _isCreatingInventory ? null : _createInventoryItem,
-                  child: _isCreatingInventory
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text('Create Item'),
-                ),
-                ElevatedButton(
-                  onPressed: _isLoadingItems
-                      ? null
-                      : () {
-                          _fetchInventoryItems();
-                        },
-                  child: _isLoadingItems
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text('Refresh Items'),
+                Icon(Icons.inventory_2_outlined, size: 40, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    item.getStringValue('product_name'),
+                    style: theme.textTheme.headlineSmall,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red),
+            Text('Cost Price: ${currencyFormat.format(item.getDoubleValue('item_cost_price'))}', style: theme.textTheme.bodyMedium),
+            Text('Sales Price: ${currencyFormat.format(item.getDoubleValue('item_sales_price'))}', style: theme.textTheme.bodyMedium),
+            Text('Stock: ${item.getIntValue('stock')}', style: theme.textTheme.bodyMedium),
+            if (item.getStringValue('about_product').isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('About Product:', style: theme.textTheme.titleMedium),
+              Text(item.getStringValue('about_product'), style: theme.textTheme.bodyMedium),
+            ],
+            if (item.getStringValue('product_specification').isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('Product Specification:', style: theme.textTheme.titleMedium),
+              Text(item.getStringValue('product_specification'), style: theme.textTheme.bodyMedium),
+            ],
+             if (item.getStringValue('EAN_code').isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('EAN Code:', style: theme.textTheme.titleMedium),
+              Text(item.getStringValue('EAN_code'), style: theme.textTheme.bodyMedium),
+            ],
+             if (item.getStringValue('image_link').isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('Image Link:', style: theme.textTheme.titleMedium),
+              Text(item.getStringValue('image_link'), style: theme.textTheme.bodyMedium),
+            ],
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onUpdate(item);
+                  },
+                  child: const Text('View/Edit'),
                 ),
-              ),
-            if (_inventoryItems.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: <DataColumn>[
-                    const DataColumn(label: Text('Product Name')),
-                    DataColumn(
-                        label: Text('Cost Price (${currencyFormat.currencySymbol})')),
-                    DataColumn(
-                        label: Text('Sales Price (${currencyFormat.currencySymbol})')),
-                    const DataColumn(label: Text('Stock Info')),
-                    const DataColumn(label: Text('Actions')), // Changed heading to Actions
-                  ],
-                  rows: _inventoryItems.take(_displayedItemCount).map((item) {
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(item.getStringValue('product_name'))),
-                        DataCell(Text(currencyFormat.format(
-                            item.getDoubleValue('item_cost_price')))),
-                        DataCell(Text(currencyFormat.format(
-                            item.getDoubleValue('item_sales_price')))),
-                        DataCell(Text('${item.getIntValue('stock')}')),
-                        DataCell(
-                          Row( // Use Row to place buttons side by side
-                            mainAxisAlignment: MainAxisAlignment.end, // Align buttons to the right
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.visibility, color: Colors.blue),
-                                onPressed: () {
-                                  _updateInventoryItem(item);
-                                },
-                              ),
-                              IconButton(
-                                icon: _isDeletingItem
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator())
-                                    : const Icon(Icons.delete, color: Colors.red),
-                                onPressed: _isDeletingItem
-                                    ? null
-                                    : () => _deleteInventoryItem(item.id),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onDelete(item.id);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text('Delete', style: TextStyle(color: Colors.white)),
                 ),
-              ),
-            if (_isLoadingItems && _inventoryItems.isEmpty && _errorMessage.isEmpty)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
-            if (_inventoryItems.isNotEmpty && _hasMoreToLoad)
-              Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: ElevatedButton(
-                  onPressed: _isLoadingItems ? null : _loadMoreItems,
-                  child: _isLoadingItems
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text('Load More'),
-                ),
-              ),
+              ],
+            ),
           ],
         ),
       ),
