@@ -24,7 +24,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sensor Monitoring Data')),
       body: Center(
       child: Text('Monitoring Page', style: TextStyle(fontSize: 24)),
     

@@ -52,9 +52,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(  // Directly define the AppBar here
-        title: Text(
-          'Solar Square'.tr, // Using translation for App Name
-        ),
+        
         centerTitle: true,
         actions: <Widget>[
           const LanguageSelector(), // Keep using the LanguageSelector
