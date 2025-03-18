@@ -1,32 +1,203 @@
+// inventory_dashboard_page.dart (Renamed for clarity - you can choose your name)
 import 'package:flutter/material.dart';
+import 'package:inventory_management/main.dart';
+import 'package:pocketbase/pocketbase.dart';
+import 'package:intl/intl.dart'; // For currency formatting
 
-class MonitoringPage extends StatefulWidget {
-  const MonitoringPage({super.key});
+class InventoryDashboardPage extends StatefulWidget {
+  const InventoryDashboardPage({super.key});
 
   @override
-  State<MonitoringPage> createState() => _MonitoringPageState();
+  State<InventoryDashboardPage> createState() => _InventoryDashboardPageState();
 }
 
-class _MonitoringPageState extends State<MonitoringPage> {
-  DateTime selectedDate = DateTime.now();
-  bool showAmbient = true;
+class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
+  List<RecordModel> _inventoryItems = [];
+  bool _isLoadingItems = false;
+  String _errorMessage = '';
+
+  int _totalStock = 0;
+  double _totalInventoryCost = 0;
+  double _totalInventorySalesValue = 0;
+  int _totalItemsCount = 0;
 
   @override
   void initState() {
     super.initState();
-    if (DateTime.now().isAfter(DateTime(2024, 6, 17))) {
-      selectedDate = DateTime(2024, 6, 17);
-    } else {
-      selectedDate = DateTime.now();
-    }
+    _subscribeToInventoryChanges(); // Subscribe to realtime updates
+    _fetchInventoryItems();       // Fetch initial data
   }
 
   @override
+  void dispose() {
+    pb.collection('inventory').unsubscribe(); // Unsubscribe when widget is disposed
+    super.dispose();
+  }
+
+  Future<void> _fetchInventoryItems() async {
+    setState(() {
+      _isLoadingItems = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final resultList = await pb.collection('inventory').getList(
+        page: 1,
+        perPage: 500,
+        sort: '-created',
+        expand: 'user',
+      );
+
+      setState(() {
+        _inventoryItems = resultList.items;
+        _calculateAggregates();
+      });
+      print('Fetched ${_inventoryItems.length} inventory items.');
+    } catch (e) {
+      print('Error fetching inventory items: $e');
+      setState(() {
+        _errorMessage = 'Failed to fetch inventory data. Please try again.';
+      });
+    } finally {
+      setState(() {
+        _isLoadingItems = false;
+      });
+    }
+  }
+
+  void _calculateAggregates() {
+    _totalStock = 0;
+    _totalInventoryCost = 0;
+    _totalInventorySalesValue = 0;
+    _totalItemsCount = _inventoryItems.length;
+
+    for (var item in _inventoryItems) {
+      int stock = item.getIntValue('stock');
+      double costPrice = item.getDoubleValue('item_cost_price');
+      double salesPrice = item.getDoubleValue('item_sales_price');
+
+      _totalStock += stock;
+      _totalInventoryCost += costPrice * stock;
+      _totalInventorySalesValue += salesPrice * stock;
+    }
+  }
+
+  void _subscribeToInventoryChanges() {
+    pb.collection('inventory').subscribe('*', (e) {
+      print('Realtime event action: ${e.action}');
+      print('Realtime event record: ${e.record?.id}');
+      _fetchInventoryItems(); // Re-fetch data on any inventory change
+    },);
+  }
+
+
+  @override
   Widget build(BuildContext context) {
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    final theme = Theme.of(context);
+
     return Scaffold(
-      body: Center(
-      child: Text('Monitoring Page', style: TextStyle(fontSize: 24)),
-    
+      appBar: AppBar(
+        title: const Text('Inventory Dashboard'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Wrap( // Dashboard Tiles
+              spacing: 20.0,
+              runSpacing: 20.0,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildDashboardTile(
+                  theme: theme,
+                  title: 'Total Items in Stock',
+                  value: _totalStock.toString(),
+                  icon: Icons.inventory,
+                  color: Colors.blue,
+                ),
+                _buildDashboardTile(
+                  theme: theme,
+                  title: 'Total Inventory Cost',
+                  value: currencyFormat.format(_totalInventoryCost),
+                  icon: Icons.price_change,
+                  color: Colors.green,
+                ),
+                _buildDashboardTile(
+                  theme: theme,
+                  title: 'Total Inventory Sales Value',
+                  value: currencyFormat.format(_totalInventorySalesValue),
+                  icon: Icons.attach_money,
+                  color: Colors.teal,
+                ),
+                _buildDashboardTile(
+                  theme: theme,
+                  title: 'Total Unique Items',
+                  value: _totalItemsCount.toString(),
+                  icon: Icons.format_list_numbered,
+                  color: Colors.orange,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (_errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            if (_inventoryItems.isEmpty && _errorMessage.isEmpty && !_isLoadingItems)
+              const Padding(
+                padding: EdgeInsets.only(top: 20.0),
+                child: Text('No inventory items available to display dashboard.'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardTile({
+    required ThemeData theme,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      width: MediaQuery.of(context).size.width > 600
+          ? 300
+          : MediaQuery.of(context).size.width - 40,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 7,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 40, color: color),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface),
+          ),
+        ],
       ),
     );
   }
