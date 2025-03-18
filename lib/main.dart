@@ -1,5 +1,6 @@
 // main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/pages/login_page.dart';
 import 'package:inventory_management/utils/theme/app_theme.dart';
@@ -9,13 +10,21 @@ import 'package:inventory_management/utils/translation/translation_service.dart'
 import 'package:pocketbase/pocketbase.dart';
 import 'package:inventory_management/utils/auth/auth_check.dart'; // UPDATED import
 
-final pb = PocketBase('https://first.pockethost.io/');
+late PocketBase pb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables first
+  await dotenv.load(fileName: ".env");
+  
   final ThemeController themeController = Get.put(ThemeController());
   await themeController.loadInitialTheme();
   final LocaleController localeController = Get.put(LocaleController());
+  
+  // Initialize PocketBase after loading environment variables
+  pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'https://default.url'); // Add a fallback URL
+  
   runApp(const MyApp());
 }
 
