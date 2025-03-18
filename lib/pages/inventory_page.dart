@@ -1,9 +1,9 @@
-// inventory_page.dart
 import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart'; // Import pb
 import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:intl/intl.dart'; // Import intl for number formatting
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -13,17 +13,14 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-
   bool _isCreatingInventory = false;
   String _errorMessage = '';
   List<RecordModel> _inventoryItems = [];
   bool _isLoadingItems = false;
   bool _isDeletingItem = false;
-
-
-  int _currentPage = 1;
-  int _perPage = 6;
-  int _totalPages = 1;
+  int _displayedItemCount = 10; // Initial number of items to display
+  int _loadMoreIncrement = 10; // Number of items to load on "Load More"
+  bool _hasMoreToLoad = false;
 
   @override
   void initState() {
@@ -48,22 +45,23 @@ class _InventoryPageState extends State<InventoryPage> {
       _isLoadingItems = true;
       _errorMessage = '';
       _inventoryItems = [];
+      _hasMoreToLoad = false; // Reset on refresh
+      _displayedItemCount = _loadMoreIncrement; // Reset display count
     });
 
     try {
       final resultList = await pb.collection('inventory').getList(
-        page: _currentPage,
-        perPage: _perPage,
+        page: 1, // Fetch all items in one go for "Load More" functionality
+        perPage: 500,
         sort: '-created',
         expand: 'user',
       );
 
       setState(() {
         _inventoryItems = resultList.items;
-        _totalPages = resultList.totalPages;
+        _hasMoreToLoad = _inventoryItems.length > _displayedItemCount;
       });
-      print('Fetched ${_inventoryItems.length} inventory items (Page $_currentPage of $_totalPages).');
-
+      print('Fetched ${_inventoryItems.length} inventory items.');
     } catch (e) {
       print('Error fetching inventory items: $e');
       setState(() {
@@ -135,9 +133,22 @@ class _InventoryPageState extends State<InventoryPage> {
     });
   }
 
+  void _loadMoreItems() {
+    setState(() {
+      _displayedItemCount += _loadMoreIncrement;
+      if (_displayedItemCount >= _inventoryItems.length) {
+        _displayedItemCount = _inventoryItems.length;
+        _hasMoreToLoad = false;
+      } else {
+        _hasMoreToLoad = true;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -147,7 +158,8 @@ class _InventoryPageState extends State<InventoryPage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                  onPressed: _isCreatingInventory ? null : _createInventoryItem, // Navigate to create page
+                  onPressed:
+                      _isCreatingInventory ? null : _createInventoryItem,
                   child: _isCreatingInventory
                       ? const SizedBox(
                           height: 20,
@@ -157,23 +169,21 @@ class _InventoryPageState extends State<InventoryPage> {
                       : const Text('Create Item'),
                 ),
                 ElevatedButton(
-                  onPressed: _isLoadingItems ? null : () {
-                    setState(() {
-                      _currentPage = 1;
-                    });
-                    _fetchInventoryItems();
-                  },
+                  onPressed: _isLoadingItems
+                      ? null
+                      : () {
+                          _fetchInventoryItems();
+                        },
                   child: _isLoadingItems
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(color: Colors.white),
                         )
-                      : const Text('Refresh Items'), // Changed text to Refresh
+                      : const Text('Refresh Items'),
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
             if (_errorMessage.isNotEmpty)
               Padding(
@@ -184,105 +194,72 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
             if (_inventoryItems.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10.0,
-                    mainAxisSpacing: 10.0,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: _inventoryItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _inventoryItems[index];
-                    return Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade400),
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inventory_2_outlined, size: 40, color: Theme.of(context).primaryColor),
-                              const SizedBox(height: 8),
-                              Text(
-                                item.getStringValue('product_name'),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '\$${item.getDoubleValue('item_cost_price').toStringAsFixed(2)}',
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: 5,
-                          left: 5,
-                          right: 5,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: <DataColumn>[
+                    const DataColumn(label: Text('Product Name')),
+                    DataColumn(
+                        label: Text('Cost Price (${currencyFormat.currencySymbol})')),
+                    DataColumn(
+                        label: Text('Sales Price (${currencyFormat.currencySymbol})')),
+                    const DataColumn(label: Text('Stock Info')),
+                    const DataColumn(label: Text('Actions')), // Changed heading to Actions
+                  ],
+                  rows: _inventoryItems.take(_displayedItemCount).map((item) {
+                    return DataRow(
+                      cells: <DataCell>[
+                        DataCell(Text(item.getStringValue('product_name'))),
+                        DataCell(Text(currencyFormat.format(
+                            item.getDoubleValue('item_cost_price')))),
+                        DataCell(Text(currencyFormat.format(
+                            item.getDoubleValue('item_sales_price')))),
+                        DataCell(Text('${item.getIntValue('stock')}')),
+                        DataCell(
+                          Row( // Use Row to place buttons side by side
+                            mainAxisAlignment: MainAxisAlignment.end, // Align buttons to the right
                             children: [
                               IconButton(
-                                icon: _isDeletingItem ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator()) : const Icon(Icons.delete, color: Colors.red),
-                                iconSize: 20,
-                                onPressed: _isDeletingItem ? null : () => _deleteInventoryItem(item.id),
+                                icon: const Icon(Icons.visibility, color: Colors.blue),
+                                onPressed: () {
+                                  _updateInventoryItem(item);
+                                },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                iconSize: 20,
-                                onPressed: () => _updateInventoryItem(item), // Navigate to edit page
+                                icon: _isDeletingItem
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator())
+                                    : const Icon(Icons.delete, color: Colors.red),
+                                onPressed: _isDeletingItem
+                                    ? null
+                                    : () => _deleteInventoryItem(item.id),
                               ),
                             ],
                           ),
                         ),
                       ],
                     );
-                  },
+                  }).toList(),
                 ),
               ),
             if (_isLoadingItems && _inventoryItems.isEmpty && _errorMessage.isEmpty)
               const Center(
                 child: CircularProgressIndicator(),
               ),
-            if (_inventoryItems.isNotEmpty)
+            if (_inventoryItems.isNotEmpty && _hasMoreToLoad)
               Padding(
                 padding: const EdgeInsets.only(top: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: _currentPage > 1 ? () {
-                        setState(() {
-                          _currentPage--;
-                        });
-                        _fetchInventoryItems();
-                      } : null,
-                    ),
-                    Text('Page $_currentPage of $_totalPages'),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward),
-                      onPressed: _currentPage < _totalPages ? () {
-                        setState(() {
-                          _currentPage++;
-                        });
-                        _fetchInventoryItems();
-                      } : null,
-                    ),
-                  ],
+                child: ElevatedButton(
+                  onPressed: _isLoadingItems ? null : _loadMoreItems,
+                  child: _isLoadingItems
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : const Text('Load More'),
                 ),
               ),
           ],
