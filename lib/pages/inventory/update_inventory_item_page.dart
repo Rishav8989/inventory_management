@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:get/get.dart';
 
 class UpdateInventoryItemPage extends StatefulWidget {
   final RecordModel item;
@@ -70,7 +71,7 @@ class _UpdateInventoryItemPageState extends State<UpdateInventoryItemPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Inventory item updated.')),
       );
-      Navigator.pop(context, true); // Go back to list page and indicate success
+      Get.back(result: true); // Go back to list page and indicate success using Get.back
 
     } catch (e) {
       print('Error updating inventory item: $e');
@@ -93,113 +94,125 @@ class _UpdateInventoryItemPageState extends State<UpdateInventoryItemPage> {
       appBar: AppBar(
         title: const Text('Update Inventory Item'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              if (_errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
+      body: Center( // Center the content
+        child: Container( // Added Container for border and max width
+          margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0), // Added margin
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400), // Added border
+            borderRadius: BorderRadius.circular(8.0), // Optional: rounded corners for border
+          ),
+          child: ConstrainedBox( // Limit max width
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0), // Keep existing padding or adjust as needed
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    if (_errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Text(
+                          _errorMessage,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    TextFormField(
+                      controller: _itemNameController,
+                      decoration: const InputDecoration(labelText: 'Product Name'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter product name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _itemCostPriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Cost Price'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter cost price';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _itemSalesPriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Sales Price'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter sales price';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _eanCodeController,
+                      decoration: const InputDecoration(labelText: 'EAN Code'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _aboutProductController,
+                      decoration: const InputDecoration(labelText: 'About Product'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _productSpecificationController,
+                      decoration: const InputDecoration(labelText: 'Product Specification'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _imageLinkController,
+                      decoration: const InputDecoration(labelText: 'Image Link'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _stockController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Stock'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter stock';
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'Please enter a valid integer';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _isUpdatingItem ? null : () => _updateInventoryItem(context),
+                      child: _isUpdatingItem
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white),
+                            )
+                          : const Text('Update Item'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Get.back(result: false); // Use Get.back to navigate back
+                      },
+                      child: const Text('Cancel Edit'),
+                    ),
+                  ],
                 ),
-              TextFormField(
-                controller: _itemNameController,
-                decoration: const InputDecoration(labelText: 'Product Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product name';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _itemCostPriceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Cost Price'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter cost price';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _itemSalesPriceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Sales Price'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter sales price';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _eanCodeController,
-                decoration: const InputDecoration(labelText: 'EAN Code'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _aboutProductController,
-                decoration: const InputDecoration(labelText: 'About Product'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _productSpecificationController,
-                decoration: const InputDecoration(labelText: 'Product Specification'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _imageLinkController,
-                decoration: const InputDecoration(labelText: 'Image Link'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _stockController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Stock'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter stock';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid integer';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isUpdatingItem ? null : () => _updateInventoryItem(context),
-                child: _isUpdatingItem
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : const Text('Update Item'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Cancel edit, go back to list
-                },
-                child: const Text('Cancel Edit'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
