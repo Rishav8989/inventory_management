@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/pages/account_page.dart';
-import 'package:inventory_management/pages/faults_page.dart';
+import 'package:inventory_management/pages/inventory_page.dart';
 import 'package:inventory_management/pages/monitoring_page.dart';
 import 'package:inventory_management/pages/support_page.dart';
 import 'package:inventory_management/utils/translation/language_selector.dart';

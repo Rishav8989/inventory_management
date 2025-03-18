@@ -17,12 +17,12 @@ class HomeBottomNavigation extends StatelessWidget {
     return BottomNavigationBar(
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: const Icon(Icons.monitor_heart), // Choose appropriate icons
-          label: 'Monitoring'.tr, // Translate Bottom Navigation labels
+          icon: const Icon(Icons.dashboard_customize_outlined), // Choose appropriate icons
+          label: 'Dashboard'.tr, // Translate Bottom Navigation labels
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.warning),
-          label: 'Faults'.tr, // Translate Bottom Navigation labels
+          icon: const Icon(Icons.inventory_rounded),
+          label: 'Inventory'.tr, // Translate Bottom Navigation labels
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.support_agent),

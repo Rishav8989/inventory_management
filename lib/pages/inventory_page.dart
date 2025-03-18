@@ -1,10 +1,8 @@
 // inventory_page.dart
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:inventory_management/main.dart'; // Import pb
 import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
-import 'package:inventory_management/utils/auth/auth_controller.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -15,24 +13,13 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _itemNameController = TextEditingController();
-  final TextEditingController _itemCostPriceController = TextEditingController();
-  final TextEditingController _itemSalesPriceController = TextEditingController();
-  final TextEditingController _eanCodeController = TextEditingController();
-  final TextEditingController _aboutProductController = TextEditingController();
-  final TextEditingController _productSpecificationController = TextEditingController();
-  final TextEditingController _imageLinkController = TextEditingController();
-  final TextEditingController _stockController = TextEditingController();
 
   bool _isCreatingInventory = false;
   String _errorMessage = '';
-  bool _showForm = false;
   List<RecordModel> _inventoryItems = [];
   bool _isLoadingItems = false;
   bool _isDeletingItem = false;
-  bool _isUpdatingItem = false;
-  RecordModel? _editingItem;
+
 
   int _currentPage = 1;
   int _perPage = 6;

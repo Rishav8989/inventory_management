@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
-import 'package:inventory_management/pages/login_page.dart';
 import 'package:inventory_management/utils/theme/app_theme.dart';
 import 'package:inventory_management/utils/theme/theme_controller.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
