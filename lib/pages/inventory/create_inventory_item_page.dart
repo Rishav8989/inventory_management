@@ -25,7 +25,7 @@ class _CreateInventoryItemPageState extends State<CreateInventoryItemPage> {
   bool _isCreatingInventory = false;
   String _errorMessage = '';
 
-  Future<void> _createInventoryItem(BuildContext context) async {
+  Future<void> _createInventoryItem() async { // Removed BuildContext context parameter
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -73,10 +73,14 @@ class _CreateInventoryItemPageState extends State<CreateInventoryItemPage> {
         _imageLinkController.clear();
         _stockController.clear();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Inventory item created with ID: ${record.id}')),
+      Get.snackbar( // Replaced ScaffoldMessenger with Get.snackbar
+        'Success',
+        'Inventory item created with ID: ${record.id}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade400,
+        colorText: Colors.white,
       );
-      Navigator.pop(context, true); // Go back to list page and indicate success
+      Get.back(result: true);
 
     } catch (e) {
       print('Error creating inventory item: $e');
@@ -188,7 +192,7 @@ class _CreateInventoryItemPageState extends State<CreateInventoryItemPage> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: _isCreatingInventory ? null : () => _createInventoryItem(context),
+                      onPressed: _isCreatingInventory ? null : _createInventoryItem, // Removed context from function call
                       child: _isCreatingInventory
                           ? const SizedBox(
                               height: 20,

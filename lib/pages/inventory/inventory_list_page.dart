@@ -5,6 +5,7 @@ import 'package:inventory_management/widgets/inventory/inventory_item_bottom_she
 import 'package:inventory_management/widgets/inventory/inventory_tile.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:get/get.dart'; // Import GetX
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -30,7 +31,6 @@ class _InventoryPageState extends State<InventoryPage> {
   void initState() {
     super.initState();
     _controller = InventoryController(
-      context: context,
       onItemsFetched: (items) {
         setState(() {
           _inventoryItems = items;
@@ -90,17 +90,14 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   void _showItemDetailsBottomSheet(RecordModel item) {
-    showModalBottomSheet(
-      context: context,
+    Get.bottomSheet( // Use Get.bottomSheet
+      InventoryItemBottomSheet(
+        item: item,
+        onRefresh: _controller.fetchInventoryItems,
+        onDelete: _controller.deleteInventoryItem,
+        onUpdate: _controller.updateInventoryItem,
+      ),
       isScrollControlled: true,
-      builder: (BuildContext context) {
-        return InventoryItemBottomSheet(
-          item: item,
-          onRefresh: _controller.fetchInventoryItems,
-          onDelete: _controller.deleteInventoryItem,
-          onUpdate: _controller.updateInventoryItem,
-        );
-      },
     );
   }
 

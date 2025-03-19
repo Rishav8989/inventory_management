@@ -4,6 +4,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
+import 'package:get/get.dart'; // Import GetX
 
 class OrderSummaryPage extends StatefulWidget {
   final Map<RecordModel, int> cartItems;
@@ -202,7 +203,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Go back to CreateOrderPage
+                    Get.back(); // Go back to CreateOrderPage using GetX
                   },
                   child: const Text('Cancel'),
                 ),

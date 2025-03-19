@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:get/get.dart'; // Import GetX
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -51,18 +52,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
         try {
           await pb.collection('users').requestVerification(_emailController.text.trim().toLowerCase()); // Ensure email is lowercase for verification too
           print('Verification email sent to ${_emailController.text.trim()}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Verification email sent!')),
+          Get.snackbar( // Use GetX Snackbar
+            'Verification Email Sent',
+            'Verification email sent!',
+            snackPosition: SnackPosition.BOTTOM,
           );
         } catch (verificationError) {
           print('Error sending verification email: $verificationError');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful, but error sending verification email.')),
+          Get.snackbar( // Use GetX Snackbar
+            'Registration Success, Verification Error',
+            'Registration successful, but error sending verification email.',
+            snackPosition: SnackPosition.BOTTOM,
           );
         }
 
         // Navigate back to login page after successful registration
-        Navigator.pop(context); // Go back to the previous page (LoginPage)
+        Get.back(); // Go back to the previous page (LoginPage) using GetX
 
       } catch (e) {
         print('Registration Error: $e');
@@ -206,7 +211,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       constraints: BoxConstraints(maxWidth: maxWidth),
                       child: TextButton(
                         onPressed: () {
-                          Navigator.pop(context); // Go back to Login Page
+                          Get.back(); // Go back to Login Page using GetX
                         },
                         child: const Text('Already have an account? Login'),
                       ),

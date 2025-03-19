@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart'; // Import GetX
 
 class InventoryItemBottomSheet extends StatelessWidget {
   final RecordModel item;
@@ -64,14 +65,14 @@ class InventoryItemBottomSheet extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Get.back(); // Use Get.back() to close the bottom sheet
                     onUpdate(item);
                   },
                   child: const Text('View/Edit'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Get.back(); // Use Get.back() to close the bottom sheet
                     onDelete(item.id);
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
