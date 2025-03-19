@@ -25,8 +25,8 @@ class HomeBottomNavigation extends StatelessWidget {
           label: 'Inventory'.tr, // Translate Bottom Navigation labels
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.support_agent),
-          label: 'Support'.tr, // Translate Bottom Navigation labels
+          icon: const Icon(Icons.assignment_add),
+          label: 'Order'.tr, // Translate Bottom Navigation labels
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.account_circle),

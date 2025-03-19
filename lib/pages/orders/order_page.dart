@@ -1,9 +1,11 @@
 // lib/pages/inventory/create_order_page.dart
 import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart'; // Import pb
-// import 'package:inventory_management/pages/inventory/cart_page.dart'; // REMOVE CartPage import
+import 'package:inventory_management/pages/orders/order_summary_page.dart';
+import 'package:inventory_management/widgets/inventory/order_item_widget.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'dart:async'; //  Keep this import
+import 'dart:async';
+
 
 class CreateOrderPage extends StatefulWidget {
   const CreateOrderPage({super.key});
@@ -25,14 +27,12 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
   @override
   void initState() {
     super.initState();
-    _subscribeToInventoryChanges(); // Start listening for real-time updates
-    _fetchInventoryItems(); // Initial fetch
+    _subscribeToInventoryChanges();
+    _fetchInventoryItems();
   }
 
-
-
   void _subscribeToInventoryChanges() {
-    pb.collection('inventory').subscribe('*', (e) { 
+    pb.collection('inventory').subscribe('*', (e) {
       print('Realtime inventory event: ${e.action}');
       print('Record: ${e.record?.toJson()}');
       _fetchInventoryItems();
@@ -58,7 +58,6 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
         _filterItems();
       });
       print('CreateOrderPage: Fetched ${_inventoryItems.length} inventory items.');
-
     } catch (e) {
       print('CreateOrderPage: Error fetching inventory items: $e');
       setState(() {
@@ -74,7 +73,9 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
   void _filterItems() {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
-      _filteredItems = _inventoryItems.where((item) => item.getStringValue('product_name').toLowerCase().contains(query)).toList();
+      _filteredItems = _inventoryItems
+          .where((item) => item.getStringValue('product_name').toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -86,10 +87,11 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
         _cart.remove(item.id);
       }
     });
-    print('CreateOrderPage: Updated cart for ${item.getStringValue('product_name')} - Quantity: $quantity. Cart: $_cart');
+    print(
+        'CreateOrderPage: Updated cart for ${item.getStringValue('product_name')} - Quantity: $quantity. Cart: $_cart');
   }
 
-  Future<void> _createOrder() async {
+  Future<void> _processOrder() async {
     setState(() {
       _isCreatingOrder = true;
       _errorMessage = '';
@@ -103,14 +105,16 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
         final currentStock = item.getIntValue('stock');
         if (quantity > currentStock) {
           setState(() {
-            _errorMessage = 'Order quantity exceeds stock for: ${item.getStringValue('product_name')}';
+            _errorMessage =
+                'Order quantity exceeds stock for: ${item.getStringValue('product_name')}';
           });
           return;
         }
 
         final newStock = currentStock - quantity;
         await pb.collection('inventory').update(item.id, body: {'stock': newStock});
-        print('CreateOrderPage: Updated stock for ${item.getStringValue('product_name')} - Ordered: $quantity, New Stock: $newStock');
+        print(
+            'CreateOrderPage: Updated stock for ${item.getStringValue('product_name')} - Ordered: $quantity, New Stock: $newStock');
       }
 
       setState(() {
@@ -121,8 +125,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
         const SnackBar(content: Text('Order Created and Inventory Updated!')),
       );
 
-      _fetchInventoryItems(); // Refresh inventory list (though realtime should handle this)
-
+      _fetchInventoryItems();
     } catch (e) {
       print('CreateOrderPage: Error creating order: $e');
       setState(() {
@@ -136,6 +139,29 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
         _isCreatingOrder = false;
       });
     }
+  }
+
+  void _showOrderSummary() {
+    if (_cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add items to the cart to create an order.')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderSummaryPage(
+          cartItems: _cart.map((itemId, quantity) {
+            final item = _inventoryItems.firstWhere((item) => item.id == itemId);
+            return MapEntry(item, quantity);
+          }),
+          onConfirmOrder: _processOrder,
+          inventoryItems: _inventoryItems,
+        ),
+      ),
+    );
   }
 
   @override
@@ -168,7 +194,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       ElevatedButton(
-                        onPressed: _isCreatingOrder ? null : _createOrder,
+                        onPressed: _cart.isEmpty || _isCreatingOrder ? null : _showOrderSummary,
                         child: _isCreatingOrder
                             ? const SizedBox(
                                 height: 20,
@@ -197,52 +223,11 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                     itemCount: _filteredItems.length,
                     itemBuilder: (context, index) {
                       final item = _filteredItems[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.getStringValue('product_name'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  Text('Price: ₹${item.getDoubleValue('item_sales_price').toStringAsFixed(2)}'),
-                                  Text('Stock: ${item.getIntValue('stock')}'),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            Expanded(
-                              flex: 2,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove),
-                                    onPressed: () {
-                                      final currentQuantity = _cart[item.id] ?? 0;
-                                      _updateCartQuantity(item, currentQuantity - 1);
-                                    },
-                                  ),
-                                  SizedBox(
-                                    width: 50,
-                                    child: Center(
-                                      child: Text('${_cart[item.id] ?? 0}'),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add),
-                                    onPressed: () {
-                                      final currentQuantity = _cart[item.id] ?? 0;
-                                      _updateCartQuantity(item, currentQuantity + 1);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      return OrderItemWidget(
+                        item: item,
+                        quantity: _cart[item.id] ?? 0,
+                        updateCartQuantity: _updateCartQuantity,
+                        cart: _cart,
                       );
                     },
                   ),
@@ -253,7 +238,8 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                 if (_filteredItems.isEmpty && !_isLoadingItems && _errorMessage.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text("No items match your search.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+                    child: Text("No items match your search.",
+                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
                   ),
               ],
             ),
