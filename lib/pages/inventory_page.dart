@@ -5,6 +5,7 @@ import 'package:inventory_management/pages/inventory/create_inventory_item_page.
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
+import 'dart:async'; // Import dart:async - Keep this
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -25,14 +26,30 @@ class _InventoryPageState extends State<InventoryPage> {
   bool _hasMoreToLoad = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  // StreamSubscription? _inventorySubscription;  <-- REMOVE StreamSubscription variable
 
   @override
   void initState() {
     super.initState();
-    _fetchInventoryItems();
+    _subscribeToInventoryChanges(); // Start realtime subscription
+    _fetchInventoryItems(); // Initial data fetch
   }
 
-  Future<void> _createInventoryItem() async {
+  // @override                                      <-- REMOVE dispose method - not needed for simple subscribe
+  // void dispose() {
+  //   _inventorySubscription?.cancel(); // Cancel subscription on dispose
+  //   super.dispose();
+  // }
+
+  void _subscribeToInventoryChanges() {
+    pb.collection('inventory').subscribe('*', (e) { // <-- Call subscribe directly, no assignment
+      print('Realtime inventory event: ${e.action}');
+      print('Record: ${e.record?.toJson()}');
+      _fetchInventoryItems(); // Re-fetch inventory on changes
+    });
+  }
+
+  Future<void> _createInventoryItem() async { // <-- Ensure function is defined
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateInventoryItemPage()),
@@ -128,7 +145,7 @@ class _InventoryPageState extends State<InventoryPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Inventory item deleted.')),
         );
-        _fetchInventoryItems();
+        _fetchInventoryItems(); // Re-fetch after delete (realtime will also trigger this)
       }
     } catch (e) {
       print('Error deleting inventory item: $e');
@@ -149,7 +166,7 @@ class _InventoryPageState extends State<InventoryPage> {
           builder: (context) => UpdateInventoryItemPage(item: item)),
     ).then((value) {
       if (value == true) {
-        _fetchInventoryItems();
+        _fetchInventoryItems(); // Re-fetch after update (realtime will also trigger this)
       }
     });
   }
@@ -215,26 +232,7 @@ class _InventoryPageState extends State<InventoryPage> {
                             )
                           : const Text('Create Item'),
                     ),
-                    ElevatedButton(
-                      onPressed: _isLoadingItems
-                          ? null
-                          : () {
-                              setState(() {
-                                _searchController.clear();
-                                _searchQuery = '';
-                                _displayedItemCount = _loadMoreIncrement;
-                                _hasMoreToLoad = false;
-                              });
-                              _fetchInventoryItems();
-                            },
-                      child: _isLoadingItems
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white),
-                            )
-                          : const Text('Refresh Items'),
-                    ),
+                    // REFRESH BUTTON REMOVED - Already removed in previous steps
                   ],
                 ),
                 const SizedBox(height: 20),
