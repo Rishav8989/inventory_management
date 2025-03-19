@@ -69,7 +69,7 @@ class AuthController extends GetxController {
         _saveUserId(userId.value!); // Ensure User ID is saved if it wasn't cached before
       }
       isLoggedIn.value = true;
-      Get.offAll(() => const HomePage()); // Use GetX navigation
+      Get.offAll(() => HomePage()); // Use GetX navigation
     } else {
       isLoggedIn.value = false;
       Get.offAll(() => const LoginPage()); // Use GetX navigation
@@ -94,7 +94,7 @@ class AuthController extends GetxController {
       isLoggedIn.value = true;
       await _saveToken(pb.authStore.token); // Save token
       await _saveUserId(userId.value!); // Save User ID to cache
-      Get.offAll(() => const HomePage()); // Use GetX navigation
+      Get.offAll(() => HomePage()); // Use GetX navigation
     } catch (e) {
       print('Login Error: $e');
       errorMessage.value = 'Login failed. Please check your credentials and try again.';
