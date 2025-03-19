@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/main.dart'; // Import pb
 import 'package:inventory_management/pages/orders/order_summary_page.dart';
+import 'package:inventory_management/pages/orders/stock_addition_summary_page.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 class CreateOrderController extends GetxController {
   var isCreatingOrder = false.obs;
+  var isAddingStock = false.obs;
   var errorMessage = ''.obs;
   var isLoadingItems = false.obs;
   var inventoryItems = <RecordModel>[].obs;
@@ -106,20 +108,65 @@ class CreateOrderController extends GetxController {
     }
   }
 
-  // Show Order Summary
-  void showOrderSummary() {
-    if (cart.isEmpty) {
-      Get.snackbar('Error', 'Please add items to the cart to create an order.');
-      return;
-    }
+  // Add Stock to Inventory
+  Future<void> processStockAddition() async {
+    isAddingStock(true);
+    errorMessage('');
 
-    Get.to(() => OrderSummaryPage(
-          cartItems: cart.map((itemId, quantity) {
-            final item = inventoryItems.firstWhere((item) => item.id == itemId);
-            return MapEntry(item, quantity);
-          }),
-          onConfirmOrder: processOrder,
-          inventoryItems: inventoryItems,
-        ));
+    try {
+      for (var itemId in cart.keys) {
+        final quantity = cart[itemId]!;
+        final item = inventoryItems.firstWhere((item) => item.id == itemId);
+
+        final currentStock = item.getIntValue('stock');
+        final newStock = currentStock + quantity;
+        await pb.collection('inventory').update(item.id, body: {'stock': newStock});
+        print('Added stock for ${item.getStringValue('product_name')} - Added: $quantity, New Stock: $newStock');
+      }
+
+      Get.snackbar('Success', 'Stock added successfully!');
+      cart.clear();
+      fetchInventoryItems(); // Refresh inventory
+    } catch (e) {
+      errorMessage('Failed to add stock. Please try again.');
+      Get.snackbar('Error', 'Failed to add stock.');
+    } finally {
+      isAddingStock(false);
+    }
   }
+
+  // Show Order Summary
+  // Show Order Summary
+void showOrderSummary() {
+  if (cart.isEmpty) {
+    Get.snackbar('Error', 'Please add items to the cart to create an order.');
+    return;
+  }
+
+  Get.to(() => OrderSummaryPage(
+        cartItems: cart.map((itemId, quantity) {
+          final item = inventoryItems.firstWhere((item) => item.id == itemId);
+          return MapEntry(item, quantity);
+        }),
+        onConfirmOrder: processOrder,
+        inventoryItems: inventoryItems,
+      ));
+}
+
+// Show Stock Addition Summary
+void showStockAdditionSummary() {
+  if (cart.isEmpty) {
+    Get.snackbar('Error', 'Please add items to the cart to add stock.');
+    return;
+  }
+
+  Get.to(() => StockAdditionSummaryPage(
+        cartItems: cart.map((itemId, quantity) {
+          final item = inventoryItems.firstWhere((item) => item.id == itemId);
+          return MapEntry(item, quantity);
+        }),
+        onConfirmStockAddition: processStockAddition,
+        inventoryItems: inventoryItems,
+      ));
+}
 }

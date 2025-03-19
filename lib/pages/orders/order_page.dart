@@ -32,25 +32,51 @@ class CreateOrderPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Create Order Button
+                  // Button Row
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
+                        // Create Order Button
                         ElevatedButton(
-                          onPressed: controller.cart.isEmpty || controller.isCreatingOrder.value
-                              ? null
-                              : controller.showOrderSummary,
-                          child: controller.isCreatingOrder.value
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white),
-                                )
-                              : const Text('Create Order'),
+                          onPressed:
+                              controller.cart.isEmpty ||
+                                      controller.isCreatingOrder.value
+                                  ? null
+                                  : controller.showOrderSummary,
+                          child:
+                              controller.isCreatingOrder.value
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Create Order'),
                         ),
                         const SizedBox(width: 20),
+
+                        // Add Stock Button
+                        ElevatedButton(
+                          onPressed:
+                              controller.cart.isEmpty ||
+                                      controller.isAddingStock.value
+                                  ? null
+                                  : controller
+                                      .showStockAdditionSummary, // Changed from processStockAddition
+                          child:
+                              controller.isAddingStock.value
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Add Stock'),
+                        ),
                       ],
                     ),
                   ),
@@ -95,7 +121,10 @@ class CreateOrderPage extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 20),
                       child: Text(
                         "No items match your search.",
-                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),

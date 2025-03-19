@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-class OrderSummaryPage extends StatelessWidget {
+class StockAdditionSummaryPage extends StatelessWidget {
   final Map<RecordModel, int> cartItems;
-  final VoidCallback onConfirmOrder;
+  final VoidCallback onConfirmStockAddition;
   final List<RecordModel> inventoryItems;
 
-  const OrderSummaryPage({
+  const StockAdditionSummaryPage({
     Key? key,
     required this.cartItems,
-    required this.onConfirmOrder,
+    required this.onConfirmStockAddition,
     required this.inventoryItems,
   }) : super(key: key);
 
@@ -18,7 +18,7 @@ class OrderSummaryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Confirmation'),
+        title: const Text('Add Stock Confirmation'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
@@ -30,7 +30,7 @@ class OrderSummaryPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Review Order',
+              'Review Stock Additions',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -42,7 +42,7 @@ class OrderSummaryPage extends StatelessWidget {
                   final item = cartItems.keys.elementAt(index);
                   final quantity = cartItems.values.elementAt(index);
                   final currentStock = item.getIntValue('stock');
-                  final newStock = currentStock - quantity;
+                  final newStock = currentStock + quantity;
 
                   return Card(
                     elevation: 2,
@@ -67,7 +67,7 @@ class OrderSummaryPage extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Order Quantity:'),
+                              const Text('Adding:'),
                               Text(quantity.toString()),
                             ],
                           ),
@@ -99,13 +99,13 @@ class OrderSummaryPage extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    onConfirmOrder();
+                    onConfirmStockAddition();
                     Get.back(); // Navigate back after confirmation
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                   ),
-                  child: const Text('Confirm Order'),
+                  child: const Text('Confirm Stock Addition'),
                 ),
               ],
             ),
