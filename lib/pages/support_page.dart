@@ -2,30 +2,42 @@
 import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart'; // Import pb
 import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart'; // Keep import for navigation if needed
-// import 'package:inventory_management/pages/inventory/cart_page.dart'; // <-- REMOVE CartPage import
+// import 'package:inventory_management/pages/inventory/cart_page.dart'; // REMOVE CartPage import
 import 'package:pocketbase/pocketbase.dart';
+import 'dart:async'; //  Keep this import
 
-class CreateOrderPage extends StatefulWidget { // Renamed to CreateOrderPage
+class CreateOrderPage extends StatefulWidget {
   const CreateOrderPage({super.key});
 
   @override
-  State<CreateOrderPage> createState() => _CreateOrderPageState(); // Renamed State class
+  State<CreateOrderPage> createState() => _CreateOrderPageState();
 }
 
-class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State class
-  bool _isCreatingOrder = false; // Renamed variable
+class _CreateOrderPageState extends State<CreateOrderPage> {
+  bool _isCreatingOrder = false;
   String _errorMessage = '';
   List<RecordModel> _inventoryItems = [];
-  List<RecordModel> _filteredItems = []; // Filtered item list
+  List<RecordModel> _filteredItems = [];
   bool _isLoadingItems = false;
-  final Map<String, int> _cart = {}; // Use a Map to hold quantity controllers
-  final TextEditingController _searchController = TextEditingController(); // Search controller
-  String _importMessage = ''; // Added _importMessage variable - for SnackBar
+  final Map<String, int> _cart = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _importMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchInventoryItems();
+    _subscribeToInventoryChanges(); // Start listening for real-time updates
+    _fetchInventoryItems(); // Initial fetch
+  }
+
+
+
+  void _subscribeToInventoryChanges() {
+    pb.collection('inventory').subscribe('*', (e) { 
+      print('Realtime inventory event: ${e.action}');
+      print('Record: ${e.record?.toJson()}');
+      _fetchInventoryItems();
+    });
   }
 
   Future<void> _fetchInventoryItems() async {
@@ -33,20 +45,20 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
       _isLoadingItems = true;
       _errorMessage = '';
       _inventoryItems = [];
-      _filteredItems = []; // Clear filtered list on refresh
+      _filteredItems = [];
     });
 
     try {
       final resultList = await pb.collection('inventory').getList(
-        perPage: 500, // Fetch all inventory items for order creation - adjust perPage if needed
-        sort: 'product_name', // Sort by product name
+        perPage: 500,
+        sort: 'product_name',
       );
 
       setState(() {
         _inventoryItems = resultList.items;
-        _filterItems(); // Apply initial filter (empty search query)
+        _filterItems();
       });
-      print('CreateOrderPage: Fetched ${_inventoryItems.length} inventory items for order creation.');
+      print('CreateOrderPage: Fetched ${_inventoryItems.length} inventory items.');
 
     } catch (e) {
       print('CreateOrderPage: Error fetching inventory items: $e');
@@ -67,18 +79,16 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
     });
   }
 
-
   void _updateCartQuantity(RecordModel item, int quantity) {
     setState(() {
       if (quantity > 0) {
         _cart[item.id] = quantity;
       } else {
-        _cart.remove(item.id); // Remove from cart if quantity is 0 or less
+        _cart.remove(item.id);
       }
     });
     print('CreateOrderPage: Updated cart for ${item.getStringValue('product_name')} - Quantity: $quantity. Cart: $_cart');
   }
-
 
   Future<void> _createOrder() async {
     setState(() {
@@ -96,7 +106,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
           setState(() {
             _errorMessage = 'Order quantity exceeds stock for: ${item.getStringValue('product_name')}';
           });
-          return; // Stop order creation if stock is exceeded
+          return;
         }
 
         final newStock = currentStock - quantity;
@@ -106,13 +116,13 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
 
       setState(() {
         _importMessage = 'Order created and inventory updated successfully!';
-        _cart.clear(); // Clear cart on successful order
+        _cart.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order Created and Inventory Updated!')),
       );
 
-      _fetchInventoryItems(); // Refresh inventory list
+      _fetchInventoryItems(); // Refresh inventory list (though realtime should handle this)
 
     } catch (e) {
       print('CreateOrderPage: Error creating order: $e');
@@ -129,26 +139,11 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Order'),
-        // actions: [  <-- Ensure actions are removed or commented out
-        //   IconButton(
-        //     icon: const Icon(Icons.shopping_cart),
-        //     onPressed: () {
-        //       print('CreateOrderPage: View Cart IconButton pressed!'); // Debug print
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(
-        //           builder: (context) => CartPage(cartItems: _cart), // Pass _cart - not needed anymore
-        //         ),
-        //       );
-        //     },
-        //   ),
-        // ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -158,7 +153,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextField( // Search bar
+                TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
                     labelText: 'Search Product Name',
@@ -184,16 +179,6 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
                             : const Text('Create Order'),
                       ),
                       const SizedBox(width: 20),
-                      ElevatedButton(
-                        onPressed: _isLoadingItems ? null : _fetchInventoryItems,
-                        child: _isLoadingItems
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(color: Colors.white),
-                              )
-                            : const Text('Refresh Items'),
-                      ),
                     ],
                   ),
                 ),
@@ -206,20 +191,20 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
-                if (_filteredItems.isNotEmpty) // Use _filteredItems for display
+                if (_filteredItems.isNotEmpty)
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _filteredItems.length, // Use filtered item count
+                    itemCount: _filteredItems.length,
                     itemBuilder: (context, index) {
-                      final item = _filteredItems[index]; // Use filtered item list
+                      final item = _filteredItems[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
                             Expanded(
                               flex: 3,
-                              child: Column( // Display Name and Price in Column
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(item.getStringValue('product_name'), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -228,10 +213,10 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
                                 ],
                               ),
                             ),
-                            const Spacer(), // Push quantity selector to the right
+                            const Spacer(),
                             Expanded(
                               flex: 2,
-                              child: Row( // Quantity Selector
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
@@ -244,7 +229,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
                                   SizedBox(
                                     width: 50,
                                     child: Center(
-                                      child: Text('${_cart[item.id] ?? 0}'), // Display quantity from cart
+                                      child: Text('${_cart[item.id] ?? 0}'),
                                     ),
                                   ),
                                   IconButton(
@@ -266,7 +251,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> { // Renamed State cl
                   const Center(
                     child: CircularProgressIndicator(),
                   ),
-                if (_filteredItems.isEmpty && !_isLoadingItems && _errorMessage.isEmpty) // Show "No items found" message when filter returns empty list
+                if (_filteredItems.isEmpty && !_isLoadingItems && _errorMessage.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 20),
                     child: Text("No items match your search.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
