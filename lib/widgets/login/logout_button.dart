@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:inventory_management/pages/login_page.dart';
 import 'package:inventory_management/main.dart';
-import 'package:inventory_management/widgets/logout_confirmation_dialog.dart';
+import 'package:inventory_management/widgets/login/logout_confirmation_dialog.dart';
 
 class LogoutButton extends StatelessWidget {
   const LogoutButton({super.key});

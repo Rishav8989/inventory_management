@@ -8,7 +8,7 @@ import 'package:inventory_management/pages/support_page.dart';
 import 'package:inventory_management/utils/translation/language_selector.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
 import 'package:inventory_management/widgets/bottom_navigation.dart';
-import 'package:inventory_management/widgets/logout_button.dart';
+import 'package:inventory_management/widgets/login/logout_button.dart';
 import 'package:inventory_management/utils/theme/theme_switcher_buttons.dart';
 
 

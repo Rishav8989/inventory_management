@@ -1,11 +1,10 @@
 // inventory_page.dart
 import 'package:flutter/material.dart';
-import 'package:inventory_management/main.dart';
-import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
-import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:inventory_management/controller/inventory_controller.dart';
+import 'package:inventory_management/widgets/inventory/inventory_item_bottom_sheet.dart';
+import 'package:inventory_management/widgets/inventory/inventory_tile.dart';
 import 'package:intl/intl.dart';
-import 'dart:async'; // Import dart:async - Keep this
+import 'package:pocketbase/pocketbase.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -20,77 +19,46 @@ class _InventoryPageState extends State<InventoryPage> {
   List<RecordModel> _inventoryItems = [];
   List<RecordModel> _filteredInventoryItems = [];
   bool _isLoadingItems = false;
-  bool _isDeletingItem = false;
   int _displayedItemCount = 10;
   int _loadMoreIncrement = 10;
   bool _hasMoreToLoad = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  // StreamSubscription? _inventorySubscription;  <-- REMOVE StreamSubscription variable
+  late InventoryController _controller;
 
   @override
   void initState() {
     super.initState();
-    _subscribeToInventoryChanges(); // Start realtime subscription
-    _fetchInventoryItems(); // Initial data fetch
-  }
+    _controller = InventoryController(
+      context: context,
+      onItemsFetched: (items) {
+        setState(() {
+          _inventoryItems = items;
+          _filterInventoryItems();
+        });
+      },
+      onError: (message) {
+        setState(() {
+          _errorMessage = message;
+        });
+      },
+      onLoading: () {
+        setState(() {
+          _isLoadingItems = true;
+          _errorMessage = '';
+          _inventoryItems = [];
+          _filteredInventoryItems = [];
+        });
+      },
+      onLoadingComplete: () {
+        setState(() {
+          _isLoadingItems = false;
+        });
+      },
+    );
 
-  // @override                                      <-- REMOVE dispose method - not needed for simple subscribe
-  // void dispose() {
-  //   _inventorySubscription?.cancel(); // Cancel subscription on dispose
-  //   super.dispose();
-  // }
-
-  void _subscribeToInventoryChanges() {
-    pb.collection('inventory').subscribe('*', (e) { // <-- Call subscribe directly, no assignment
-      print('Realtime inventory event: ${e.action}');
-      print('Record: ${e.record?.toJson()}');
-      _fetchInventoryItems(); // Re-fetch inventory on changes
-    });
-  }
-
-  Future<void> _createInventoryItem() async { // <-- Ensure function is defined
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateInventoryItemPage()),
-    ).then((value) {
-      if (value == true) {
-        _fetchInventoryItems();
-      }
-    });
-  }
-
-  Future<void> _fetchInventoryItems() async {
-    setState(() {
-      _isLoadingItems = true;
-      _errorMessage = '';
-      _inventoryItems = [];
-      _filteredInventoryItems = [];
-    });
-
-    try {
-      final resultList = await pb.collection('inventory').getList(
-        page: 1,
-        perPage: 500,
-        sort: '-created',
-        expand: 'user',
-      );
-
-      setState(() {
-        _inventoryItems = resultList.items;
-        _filterInventoryItems();
-      });
-      print('Fetched ${_inventoryItems.length} inventory items.');
-    } catch (e) {
-      print('Error fetching inventory items: $e');
-      setState(() {
-        _errorMessage = 'Failed to fetch inventory items. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isLoadingItems = false;
-      });
-    }
+    _controller.subscribeToInventoryChanges();
+    _controller.fetchInventoryItems();
   }
 
   void _filterInventoryItems() {
@@ -113,64 +81,6 @@ class _InventoryPageState extends State<InventoryPage> {
     });
   }
 
-  Future<void> _deleteInventoryItem(String recordId) async {
-    setState(() {
-      _isDeletingItem = true;
-    });
-
-    try {
-      bool? confirmDelete = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Confirm Delete'),
-            content: const Text('Are you sure you want to delete this item?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('No'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Yes', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (confirmDelete == true) {
-        await pb.collection('inventory').delete(recordId);
-        print('Inventory item deleted successfully! ID: $recordId');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Inventory item deleted.')),
-        );
-        _fetchInventoryItems(); // Re-fetch after delete (realtime will also trigger this)
-      }
-    } catch (e) {
-      print('Error deleting inventory item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete item.')),
-      );
-    } finally {
-      setState(() {
-        _isDeletingItem = false;
-      });
-    }
-  }
-
-  Future<void> _updateInventoryItem(RecordModel item) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => UpdateInventoryItemPage(item: item)),
-    ).then((value) {
-      if (value == true) {
-        _fetchInventoryItems(); // Re-fetch after update (realtime will also trigger this)
-      }
-    });
-  }
-
   void _loadMoreItems() {
     setState(() {
       _displayedItemCount += _loadMoreIncrement;
@@ -184,7 +94,12 @@ class _InventoryPageState extends State<InventoryPage> {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
-        return InventoryItemBottomSheet(item: item, onRefresh: _fetchInventoryItems, onDelete: _deleteInventoryItem, onUpdate: _updateInventoryItem);
+        return InventoryItemBottomSheet(
+          item: item,
+          onRefresh: _controller.fetchInventoryItems,
+          onDelete: _controller.deleteInventoryItem,
+          onUpdate: _controller.updateInventoryItem,
+        );
       },
     );
   }
@@ -223,7 +138,9 @@ class _InventoryPageState extends State<InventoryPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
-                      onPressed: _isCreatingInventory ? null : _createInventoryItem,
+                      onPressed: _isCreatingInventory ? null : () {
+                        _controller.createInventoryItem();
+                      },
                       child: _isCreatingInventory
                           ? const SizedBox(
                               height: 20,
@@ -232,7 +149,6 @@ class _InventoryPageState extends State<InventoryPage> {
                             )
                           : const Text('Create Item'),
                     ),
-                    // REFRESH BUTTON REMOVED - Already removed in previous steps
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -259,7 +175,12 @@ class _InventoryPageState extends State<InventoryPage> {
                       itemCount: _filteredInventoryItems.length,
                       itemBuilder: (context, index) {
                         final item = _filteredInventoryItems[index];
-                        return _buildInventoryTile(context, theme, currencyFormat, item);
+                        return InventoryTile(
+                          item: item,
+                          theme: theme,
+                          currencyFormat: currencyFormat,
+                          onTap: () => _showItemDetailsBottomSheet(item),
+                        );
                       },
                     ),
                   ),
@@ -294,132 +215,6 @@ class _InventoryPageState extends State<InventoryPage> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInventoryTile(
-      BuildContext context, ThemeData theme, NumberFormat currencyFormat, RecordModel item) {
-    return GestureDetector(
-      onTap: () => _showItemDetailsBottomSheet(item),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(color: Colors.grey.shade400),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 7,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Changed to CrossAxisAlignment.start
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              item.getStringValue('product_name'),
-              textAlign: TextAlign.left, // Align text to left
-              style: theme.textTheme.titleLarge,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Cost: ${currencyFormat.format(item.getDoubleValue('item_cost_price'))}',
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class InventoryItemBottomSheet extends StatelessWidget {
-  final RecordModel item;
-  final VoidCallback onRefresh;
-  final Function(String) onDelete;
-  final Function(RecordModel) onUpdate;
-
-  const InventoryItemBottomSheet({super.key, required this.item, required this.onRefresh, required this.onDelete, required this.onUpdate});
-
-  @override
-  Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.inventory_2_outlined, size: 40, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    item.getStringValue('product_name'),
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text('Cost Price: ${currencyFormat.format(item.getDoubleValue('item_cost_price'))}', style: theme.textTheme.bodyMedium),
-            Text('Sales Price: ${currencyFormat.format(item.getDoubleValue('item_sales_price'))}', style: theme.textTheme.bodyMedium),
-            Text('Stock: ${item.getIntValue('stock')}', style: theme.textTheme.bodyMedium),
-            if (item.getStringValue('about_product').isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text('About Product:', style: theme.textTheme.titleMedium),
-              Text(item.getStringValue('about_product'), style: theme.textTheme.bodyMedium),
-            ],
-            if (item.getStringValue('product_specification').isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text('Product Specification:', style: theme.textTheme.titleMedium),
-              Text(item.getStringValue('product_specification'), style: theme.textTheme.bodyMedium),
-            ],
-             if (item.getStringValue('EAN_code').isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text('EAN Code:', style: theme.textTheme.titleMedium),
-              Text(item.getStringValue('EAN_code'), style: theme.textTheme.bodyMedium),
-            ],
-             if (item.getStringValue('image_link').isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text('Image Link:', style: theme.textTheme.titleMedium),
-              Text(item.getStringValue('image_link'), style: theme.textTheme.bodyMedium),
-            ],
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    onUpdate(item);
-                  },
-                  child: const Text('View/Edit'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    onDelete(item.id);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text('Delete', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
