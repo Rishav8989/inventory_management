@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
-import 'package:get/get.dart'; // Import GetX
 
 class InventoryItemBottomSheet extends StatelessWidget {
   final RecordModel item;
@@ -18,6 +17,7 @@ class InventoryItemBottomSheet extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
+      color: Theme.of(context).canvasColor, // Use system theme's canvasColor for background
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,14 +65,14 @@ class InventoryItemBottomSheet extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Get.back(); // Use Get.back() to close the bottom sheet
+                    Navigator.pop(context);
                     onUpdate(item);
                   },
-                  child: const Text('View/Edit'),
+                  child: const Text('Edit'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Get.back(); // Use Get.back() to close the bottom sheet
+                    Navigator.pop(context);
                     onDelete(item.id);
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
