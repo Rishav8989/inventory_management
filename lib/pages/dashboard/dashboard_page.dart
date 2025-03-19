@@ -1,8 +1,9 @@
-// inventory_dashboard_page.dart (Renamed for clarity - you can choose your name)
+// inventory_dashboard_page.dart
 import 'package:flutter/material.dart';
+import 'package:inventory_management/controller/inventory/inventory_dashboard_controller.dart';
+import 'package:intl/intl.dart'; // For currency formatting
 import 'package:inventory_management/main.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:intl/intl.dart'; // For currency formatting
 
 class InventoryDashboardPage extends StatefulWidget {
   const InventoryDashboardPage({super.key});
@@ -21,48 +22,45 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
   double _totalInventorySalesValue = 0;
   int _totalItemsCount = 0;
 
+  late InventoryDashboardController _controller;
+
   @override
   void initState() {
     super.initState();
-    _subscribeToInventoryChanges(); // Subscribe to realtime updates
-    _fetchInventoryItems();       // Fetch initial data
+    _controller = InventoryDashboardController(
+      context: context,
+      onItemsFetched: (items) {
+        setState(() {
+          _inventoryItems = items;
+          _calculateAggregates();
+        });
+      },
+      onError: (message) {
+        setState(() {
+          _errorMessage = message;
+        });
+      },
+      onLoading: () {
+        setState(() {
+          _isLoadingItems = true;
+          _errorMessage = '';
+        });
+      },
+      onLoadingComplete: () {
+        setState(() {
+          _isLoadingItems = false;
+        });
+      },
+    );
+
+    _controller.subscribeToInventoryChanges();
+    _controller.fetchInventoryItems();
   }
 
   @override
   void dispose() {
     pb.collection('inventory').unsubscribe(); // Unsubscribe when widget is disposed
     super.dispose();
-  }
-
-  Future<void> _fetchInventoryItems() async {
-    setState(() {
-      _isLoadingItems = true;
-      _errorMessage = '';
-    });
-
-    try {
-      final resultList = await pb.collection('inventory').getList(
-        page: 1,
-        perPage: 500,
-        sort: '-created',
-        expand: 'user',
-      );
-
-      setState(() {
-        _inventoryItems = resultList.items;
-        _calculateAggregates();
-      });
-      print('Fetched ${_inventoryItems.length} inventory items.');
-    } catch (e) {
-      print('Error fetching inventory items: $e');
-      setState(() {
-        _errorMessage = 'Failed to fetch inventory data. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isLoadingItems = false;
-      });
-    }
   }
 
   void _calculateAggregates() {
@@ -82,15 +80,6 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
     }
   }
 
-  void _subscribeToInventoryChanges() {
-    pb.collection('inventory').subscribe('*', (e) {
-      setState(() {
-        _fetchInventoryItems(); // Re-fetch data on any inventory change
-      });
-    },);
-  }
-
-
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
@@ -100,15 +89,15 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
       appBar: AppBar(
         title: const Text('Inventory Dashboard'),
       ),
-      body: Center( // Center the content
-        child: ConstrainedBox( // Limit max width
+      body: Center(
+        child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, // Align column content to start
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap( // Dashboard Tiles
+                Wrap(
                   spacing: 20.0,
                   runSpacing: 20.0,
                   alignment: WrapAlignment.center,
@@ -189,30 +178,30 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
           ),
         ],
       ),
-      child: Column( // Main Column for vertical arrangement
-        crossAxisAlignment: CrossAxisAlignment.center, // Center items horizontally in the column
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row( // Row for Icon and Title
+          Row(
             children: [
               Icon(icon, size: 40, color: color),
-              const SizedBox(width: 10), // Spacing between icon and title
-              Expanded( // Use Expanded to make the title take remaining space
+              const SizedBox(width: 10),
+              Expanded(
                 child: Text(
                   title,
-                  textAlign: TextAlign.start, // Align title text to start
+                  textAlign: TextAlign.start,
                   style: theme.textTheme.titleLarge,
-                  maxLines: 2, // Limit title to two lines
-                  overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8), // Spacing between title row and value
-          FittedBox( // Make value text resizable
-            fit: BoxFit.scaleDown, // Scale down if text is too large
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: Text(
               value,
-              textAlign: TextAlign.center, // Center value text
+              textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface),
             ),
           ),

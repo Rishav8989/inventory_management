@@ -1,7 +1,6 @@
 // lib/pages/inventory/create_order_page.dart
 import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart'; // Import pb
-import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart'; // Keep import for navigation if needed
 // import 'package:inventory_management/pages/inventory/cart_page.dart'; // REMOVE CartPage import
 import 'package:pocketbase/pocketbase.dart';
 import 'dart:async'; //  Keep this import

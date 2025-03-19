@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/pages/account_page.dart';
-import 'package:inventory_management/pages/inventory_page.dart';
-import 'package:inventory_management/pages/monitoring_page.dart';
-import 'package:inventory_management/pages/support_page.dart';
+import 'package:inventory_management/pages/inventory/inventory_page.dart';
+import 'package:inventory_management/pages/dashboard/dashboard_page.dart';
+import 'package:inventory_management/pages/orders/order_page.dart';
 import 'package:inventory_management/utils/translation/language_selector.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
 import 'package:inventory_management/widgets/bottom_navigation.dart';

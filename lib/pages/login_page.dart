@@ -1,7 +1,7 @@
 // login_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:inventory_management/utils/auth/auth_controller.dart'; // Import AuthController
+import 'package:inventory_management/controller/auth_controller.dart'; // Import AuthController
 
 class LoginPage extends GetView<AuthController> { // Use GetView and inject AuthController
   const LoginPage({super.key});

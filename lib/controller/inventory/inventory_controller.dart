@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:inventory_management/main.dart';
 import 'package:inventory_management/pages/inventory/create_inventory_item_page.dart';
 import 'package:inventory_management/pages/inventory/update_inventory_item_page.dart';
-import 'package:inventory_management/widgets/inventory/inventory_item_bottom_sheet.dart';
-import 'package:inventory_management/widgets/inventory/inventory_tile.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'dart:async';
 

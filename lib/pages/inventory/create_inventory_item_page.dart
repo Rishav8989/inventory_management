@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/main.dart';
-import 'package:inventory_management/utils/auth/auth_controller.dart';
+import 'package:inventory_management/controller/auth_controller.dart';
 
 class CreateInventoryItemPage extends StatefulWidget {
   const CreateInventoryItemPage({super.key});
