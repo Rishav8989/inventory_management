@@ -86,9 +86,6 @@ class _InventoryDashboardPageState extends State<InventoryDashboardPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventory Dashboard'),
-      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

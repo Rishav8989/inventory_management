@@ -11,9 +11,6 @@ class CreateOrderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Order'),
-      ),
       body: Obx(
         () => SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
