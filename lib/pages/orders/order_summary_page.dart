@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:inventory_management/widgets/order_pdf_generator.dart';
+import 'package:pocketbase/pocketbase.dart'; // Update with your actual import path
 
 class OrderSummaryPage extends StatelessWidget {
   final Map<RecordModel, int> cartItems;
@@ -16,6 +17,9 @@ class OrderSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Track order confirmation state
+    final isOrderConfirmed = false.obs;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order Confirmation'),
@@ -87,28 +91,80 @@ class OrderSummaryPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Obx(() => Column(
               children: [
-                ElevatedButton(
-                  onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
+                if (!isOrderConfirmed.value)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          onConfirmOrder();
+                          isOrderConfirmed.value = true; // Update confirmation state
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Text('Confirm Order'),
+                      ),
+                    ],
                   ),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    onConfirmOrder();
-                    Get.back(); // Navigate back after confirmation
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                if (isOrderConfirmed.value)
+                  Column(
+                    children: [
+                      const Text(
+                        'Order confirmed successfully!',
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 20),
+                      // Center the Generate PDF button
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Calculate total cost
+                            double totalCost = 0;
+                            for (var entry in cartItems.entries) {
+                              final item = entry.key;
+                              final quantity = entry.value;
+                              final price = item.getDoubleValue('item_sales_price');
+                              totalCost += price * quantity;
+                            }
+                            
+                            // Call generatePdf with both required arguments
+                            generatePdf(cartItems, totalCost);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                          child: const Text(
+                            'Generate PDF',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                        ),
+                        child: const Text('Return to Main'),
+                      ),
+                    ],
                   ),
-                  child: const Text('Confirm Order'),
-                ),
               ],
-            ),
+            )),
           ],
         ),
       ),
