@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart'; // Import GetStorage!
 import 'package:inventory_management/utils/theme/app_theme.dart';
 import 'package:inventory_management/utils/theme/theme_controller.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
@@ -13,17 +14,20 @@ late PocketBase pb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // **Initialize GetStorage - THIS LINE IS CRUCIAL:**
+  await GetStorage.init();
+
   // Load environment variables first
   await dotenv.load(fileName: ".env");
-  
+
   final ThemeController themeController = Get.put(ThemeController());
   await themeController.loadInitialTheme();
   final LocaleController localeController = Get.put(LocaleController());
-  
+
   // Initialize PocketBase after loading environment variables
   pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'https://default.url'); // Add a fallback URL
-  
+
   runApp(const MyApp());
 }
 
