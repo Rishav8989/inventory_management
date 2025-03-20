@@ -5,6 +5,8 @@ import 'package:inventory_management/pages/account/chat_page.dart';
 import 'package:inventory_management/pages/account/profile.dart';
 import 'package:inventory_management/pages/account/select_language.dart';
 import 'package:inventory_management/pages/login_page.dart';
+import 'package:inventory_management/utils/translation/language_selector.dart';
+import 'package:inventory_management/utils/translation/locale_controller.dart';
 import 'package:inventory_management/widgets/login/logout_confirmation_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,9 +14,7 @@ class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
 
   void _logout() async {
-    // Use LogoutConfirmationDialog to get confirmation
-    bool? confirmLogout =
-        await LogoutConfirmationDialog.show(); // No context needed
+    bool? confirmLogout = await LogoutConfirmationDialog.show();
 
     if (confirmLogout == true) {
       pb.authStore.clear();
@@ -23,7 +23,6 @@ class AccountPage extends StatelessWidget {
     } else if (confirmLogout == false) {
       print('Logout cancelled from AccountPage');
       Get.snackbar(
-        // Use Get.snackbar for Snackbar
         'Logout cancelled',
         'Logout cancelled',
         duration: const Duration(seconds: 2),
@@ -87,10 +86,7 @@ class AccountPage extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.color,
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -123,13 +119,13 @@ class AccountPage extends StatelessWidget {
                       ),
                       _buildListTile(
                         Icons.chat_bubble,
-                        'chat_with_us'.tr,
+                        'Chat With Us'.tr,
                         const ChatPage(),
                       ),
                       _buildListTile(
                         Icons.language,
-                        'language'.tr,
-                        const SelectLanguage(),
+                        'Select Language'.tr,
+                        const LanguageSelectionPage(), // Navigate to the new page
                       ),
                     ],
                   ),
@@ -143,10 +139,7 @@ class AccountPage extends StatelessWidget {
                     child: SizedBox(
                       height: 50.0,
                       child: ElevatedButton(
-                        onPressed:
-                            () =>
-                                _logout(),
-
+                        onPressed: () => _logout(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
@@ -187,8 +180,7 @@ class AccountPage extends StatelessWidget {
         Icons.chevron_right,
         color: Theme.of(Get.context!).disabledColor,
       ),
-      onTap:
-          onTap ??
+      onTap: onTap ??
           () {
             if (page != null) {
               Get.to(() => page);
