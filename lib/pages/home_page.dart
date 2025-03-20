@@ -21,8 +21,6 @@ class HomePage extends StatelessWidget {
           const SizedBox(width: 12),
           const ThemeToggleButton(),
           const SizedBox(width: 12),
-          const LogoutButton(),
-          const SizedBox(width: 8),
         ],
       ),
       body: Obx(
