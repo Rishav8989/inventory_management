@@ -7,8 +7,9 @@ import 'package:inventory_management/utils/theme/app_theme.dart';
 import 'package:inventory_management/utils/theme/theme_controller.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
 import 'package:inventory_management/utils/translation/translation_service.dart';
+import 'package:inventory_management/utils/auth/auth_check.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:inventory_management/utils/auth/auth_check.dart'; // UPDATED import
+import 'package:inventory_management/utils/notification_service.dart'; // Import Notification Service
 
 late PocketBase pb;
 
@@ -26,7 +27,10 @@ void main() async {
   final LocaleController localeController = Get.put(LocaleController());
 
   // Initialize PocketBase after loading environment variables
-  pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'https://default.url'); // Add a fallback URL
+  pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'https://default.url');
+
+  // Initialize Notification Service
+  await NotificationService.initialize();
 
   runApp(const MyApp());
 }
