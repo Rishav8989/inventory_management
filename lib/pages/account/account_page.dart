@@ -1,36 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:inventory_management/main.dart';
 import 'package:inventory_management/pages/account/chat_page.dart';
 import 'package:inventory_management/pages/account/profile.dart';
 import 'package:inventory_management/pages/account/select_language.dart';
-import 'package:inventory_management/pages/login_page.dart';
 import 'package:inventory_management/utils/translation/language_selector.dart';
-import 'package:inventory_management/utils/translation/locale_controller.dart';
-import 'package:inventory_management/widgets/login/logout_confirmation_dialog.dart';
+import 'package:inventory_management/widgets/logout_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
-
-  void _logout() async {
-    bool? confirmLogout = await LogoutConfirmationDialog.show();
-
-    if (confirmLogout == true) {
-      pb.authStore.clear();
-      print('Logged out from AccountPage!');
-      Get.offAll(() => const LoginPage());
-    } else if (confirmLogout == false) {
-      print('Logout cancelled from AccountPage');
-      Get.snackbar(
-        'Logout cancelled',
-        'Logout cancelled',
-        duration: const Duration(seconds: 2),
-      );
-    } else {
-      print('Logout dialog dismissed without choice (AccountPage)');
-    }
-  }
 
   Future<void> _launchWebsite() async {
     final Uri url = Uri.parse('https://rishavwiki.netlify.app/');
@@ -125,7 +103,7 @@ class AccountPage extends StatelessWidget {
                       _buildListTile(
                         Icons.language,
                         'Select Language'.tr,
-                        const LanguageSelectionPage(), // Navigate to the new page
+                        const LanguageSelectionPage(),
                       ),
                     ],
                   ),
@@ -135,11 +113,11 @@ class AccountPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: FractionallySizedBox(
-                    widthFactor: 0.3,
+                    widthFactor: 0.5,
                     child: SizedBox(
                       height: 50.0,
                       child: ElevatedButton(
-                        onPressed: () => _logout(),
+                        onPressed: () => LogoutService.performLogout(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
