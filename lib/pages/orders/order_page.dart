@@ -13,6 +13,7 @@ class CreateOrderPage extends StatelessWidget {
     return Scaffold(
       body: Obx(
         () => SingleChildScrollView(
+          clipBehavior: Clip.none, // Prevents clipping issues
           padding: const EdgeInsets.all(20.0),
           child: Center(
             child: ConstrainedBox(
@@ -32,50 +33,44 @@ class CreateOrderPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Button Row
+                  // Button Row (Wrap to avoid overflow)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                    child: Wrap(
+                      spacing: 20, // Space between buttons
+                      runSpacing: 10, // Space if buttons wrap to next line
                       children: [
                         // Create Order Button
                         ElevatedButton(
-                          onPressed:
-                              controller.cart.isEmpty ||
-                                      controller.isCreatingOrder.value
-                                  ? null
-                                  : controller.showOrderSummary,
-                          child:
-                              controller.isCreatingOrder.value
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                  : const Text('Create Order'),
+                          onPressed: controller.cart.isEmpty ||
+                                  controller.isCreatingOrder.value
+                              ? null
+                              : controller.showOrderSummary,
+                          child: controller.isCreatingOrder.value
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Create Order'),
                         ),
-                        const SizedBox(width: 20),
-
                         // Add Stock Button
                         ElevatedButton(
-                          onPressed:
-                              controller.cart.isEmpty ||
-                                      controller.isAddingStock.value
-                                  ? null
-                                  : controller
-                                      .showStockAdditionSummary, // Changed from processStockAddition
-                          child:
-                              controller.isAddingStock.value
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                  : const Text('Add Stock'),
+                          onPressed: controller.cart.isEmpty ||
+                                  controller.isAddingStock.value
+                              ? null
+                              : controller.showStockAdditionSummary,
+                          child: controller.isAddingStock.value
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Add Stock'),
                         ),
                       ],
                     ),
@@ -100,11 +95,14 @@ class CreateOrderPage extends StatelessWidget {
                       itemCount: controller.filteredItems.length,
                       itemBuilder: (context, index) {
                         final item = controller.filteredItems[index];
-                        return OrderItemWidget(
-                          item: item,
-                          quantity: controller.cart[item.id] ?? 0,
-                          updateCartQuantity: controller.updateCartQuantity,
-                          cart: controller.cart,
+                        return ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 900.0),
+                          child: OrderItemWidget(
+                            item: item,
+                            quantity: controller.cart[item.id] ?? 0,
+                            updateCartQuantity: controller.updateCartQuantity,
+                            cart: controller.cart,
+                          ),
                         );
                       },
                     ),

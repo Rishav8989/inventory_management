@@ -31,7 +31,7 @@ void main() async {
 
   // Initialize Notification Service
   await NotificationService.initialize();
-  await NotificationService.requestNotificationPermissions(); // Request permission here
+    await NotificationService.requestNotificationPermissions(); // Request permission here
 
   runApp(const MyApp());
 }
