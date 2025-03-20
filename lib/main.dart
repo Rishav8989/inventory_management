@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // Import GetStorage!
+import 'package:get_storage/get_storage.dart'; // Import GetStorage
 import 'package:inventory_management/utils/theme/app_theme.dart';
 import 'package:inventory_management/utils/theme/theme_controller.dart';
 import 'package:inventory_management/utils/translation/locale_controller.dart';
@@ -16,22 +16,25 @@ late PocketBase pb;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // **Initialize GetStorage - THIS LINE IS CRUCIAL:**
+  // ✅ Initialize GetStorage - IMPORTANT
   await GetStorage.init();
 
-  // Load environment variables first
+  // ✅ Load environment variables before initializing PocketBase
   await dotenv.load(fileName: ".env");
 
+  // ✅ Initialize ThemeController
   final ThemeController themeController = Get.put(ThemeController());
   await themeController.loadInitialTheme();
+
+  // ✅ Initialize LocaleController
   final LocaleController localeController = Get.put(LocaleController());
 
-  // Initialize PocketBase after loading environment variables
+  // ✅ Initialize PocketBase with fallback URL
   pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'https://default.url');
 
-  // Initialize Notification Service
+  // ✅ Initialize and request permissions for notifications & storage
   await NotificationService.initialize();
-    await NotificationService.requestNotificationPermissions(); // Request permission here
+  await NotificationService.requestPermissions(); // Merged permission requests here!
 
   runApp(const MyApp());
 }

@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:inventory_management/pages/account_page.dart';
+import 'package:inventory_management/pages/account/account_page.dart';
 import 'package:inventory_management/pages/inventory/inventory_page.dart';
 import 'package:inventory_management/pages/dashboard/dashboard_page.dart';
 import 'package:inventory_management/pages/orders/order_page.dart';

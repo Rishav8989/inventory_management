@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) async {
   final pdf = pw.Document();
@@ -13,7 +16,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
       return pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
-          // Header Section
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
@@ -30,14 +32,10 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
             ],
           ),
           pw.SizedBox(height: 30),
-
-          // Invoice Title
           pw.Center(
             child: pw.Text('ORDER INVOICE', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
           ),
           pw.SizedBox(height: 20),
-
-          // Invoice Details
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
@@ -46,8 +44,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
             ],
           ),
           pw.SizedBox(height: 20),
-
-          // Items Table
           pw.Table(
             border: pw.TableBorder.all(),
             columnWidths: {
@@ -58,7 +54,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
             },
             defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
             children: [
-              // Table Header
               pw.TableRow(
                 decoration: const pw.BoxDecoration(
                   color: PdfColors.grey200,
@@ -70,7 +65,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
                   pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right)),
                 ],
               ),
-              // Item Rows
               ...cartItems.entries.map((entry) {
                 final item = entry.key;
                 final quantity = entry.value;
@@ -83,7 +77,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
                   pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Rs. ${itemTotal.toStringAsFixed(2)}', textAlign: pw.TextAlign.right)),
                 ]);
               }).toList(),
-              // Total Row
               pw.TableRow(
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(top: pw.BorderSide()),
@@ -98,8 +91,6 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
             ],
           ),
           pw.SizedBox(height: 30),
-
-          // Footer
           pw.Center(
             child: pw.Text('Thank you for your business!', style: const pw.TextStyle(fontSize: 14)),
           ),
@@ -112,5 +103,20 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
     },
   ));
 
+  // Request storage permission
+  if (await Permission.storage.request().isGranted) {
+    final output = await getExternalStorageDirectory();
+    final downloadsDir = Directory('/storage/emulated/0/Download');
+    final filePath = '${downloadsDir.path}/invoice_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+
+    print('PDF saved to: $filePath');
+  } else {
+    print('Storage permission denied');
+  }
+
+  // Optionally print or share the PDF
   await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
 }
