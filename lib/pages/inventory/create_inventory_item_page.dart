@@ -1,8 +1,9 @@
-// create_inventory_item_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:inventory_management/controller/create_inventory_item_controller.dart';
 import 'package:inventory_management/main.dart';
 import 'package:inventory_management/controller/auth_controller.dart';
+import 'package:flutter/foundation.dart';
 
 class CreateInventoryItemPage extends StatefulWidget {
   const CreateInventoryItemPage({super.key});
@@ -12,199 +13,207 @@ class CreateInventoryItemPage extends StatefulWidget {
 }
 
 class _CreateInventoryItemPageState extends State<CreateInventoryItemPage> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _itemNameController = TextEditingController();
-  final TextEditingController _itemCostPriceController = TextEditingController();
-  final TextEditingController _itemSalesPriceController = TextEditingController();
-  final TextEditingController _eanCodeController = TextEditingController();
-  final TextEditingController _aboutProductController = TextEditingController();
-  final TextEditingController _productSpecificationController = TextEditingController();
-  final TextEditingController _imageLinkController = TextEditingController();
-  final TextEditingController _stockController = TextEditingController();
+  late final CreateInventoryItemController controller;
 
-  bool _isCreatingInventory = false;
-  String _errorMessage = '';
-
-  Future<void> _createInventoryItem() async { // Removed BuildContext context parameter
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isCreatingInventory = true;
-      _errorMessage = '';
-    });
-
-    try {
-      final authController = Get.find<AuthController>();
-      final userId = authController.userId.value;
-
-      if (userId == null) {
-        setState(() {
-          _errorMessage = 'User ID not found. Please login again.';
-          _isCreatingInventory = false;
-        });
-        return;
-      }
-
-      final body = <String, dynamic>{
-        "product_name": _itemNameController.text.trim(),
-        "item_cost_price": double.tryParse(_itemCostPriceController.text.trim()) ?? 0,
-        "item_sales_price": double.tryParse(_itemSalesPriceController.text.trim()) ?? 0,
-        "user": userId,
-        "EAN_code": _eanCodeController.text.trim(),
-        "about_product": _aboutProductController.text.trim(),
-        "product_specification": _productSpecificationController.text.trim(),
-        "image_link": _imageLinkController.text.trim(),
-        "stock": int.tryParse(_stockController.text.trim()) ?? 0,
-      };
-
-      final record = await pb.collection('inventory').create(body: body);
-
-      print('Inventory item created successfully! ID: ${record.id}');
-
-      setState(() {
-        _itemNameController.clear();
-        _itemCostPriceController.clear();
-        _itemSalesPriceController.clear();
-        _eanCodeController.clear();
-        _aboutProductController.clear();
-        _productSpecificationController.clear();
-        _imageLinkController.clear();
-        _stockController.clear();
-      });
-      Get.snackbar( // Replaced ScaffoldMessenger with Get.snackbar
-        'Success',
-        'Inventory item created with ID: ${record.id}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade400,
-        colorText: Colors.white,
-      );
-      Get.back(result: true);
-
-    } catch (e) {
-      print('Error creating inventory item: $e');
-      setState(() {
-        _errorMessage = 'Failed to create inventory item. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isCreatingInventory = false;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(CreateInventoryItemController());
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Inventory Item'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
-        child: Obx(() => Get.find<AuthController>().userId.value != null
-            ? Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    if (_errorMessage.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
+        child: Center(
+          child: Obx(() {
+            if (!controller.isScanningSupported) {
+              return Column(
+                children: [
+                  Text(
+                    'Barcode scanning is not supported on this platform',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              );
+            }
+
+            if (controller.isLoading) {
+              return const CircularProgressIndicator();
+            }
+
+            return Get.find<AuthController>().userId.value != null
+                ? Container(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.dividerColor, width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                      color: theme.cardColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow,
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
                         ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: controller.formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (controller.errorMessage.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                controller.errorMessage,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          TextFormField(
+                            controller: controller.itemNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Product Name',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter product name';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.itemCostPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Cost Price',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter cost price';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Please enter a valid number';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.itemSalesPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Sales Price',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter sales price';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Please enter a valid number';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: controller.eanCodeController,
+                                  decoration: InputDecoration(
+                                    labelText: 'EAN Code',
+                                    labelStyle: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.camera_alt),
+                                onPressed: () {
+                                  controller.scanEAN(context);
+                                },
+                                tooltip: 'Scan EAN',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.aboutProductController,
+                            decoration: InputDecoration(
+                              labelText: 'About Product',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.productSpecificationController,
+                            decoration: InputDecoration(
+                              labelText: 'Product Specification',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.imageLinkController,
+                            decoration: InputDecoration(
+                              labelText: 'Image Link',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller.stockController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Stock',
+                              labelStyle: theme.textTheme.bodyMedium,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter stock';
+                              }
+                              if (int.tryParse(value) == null) {
+                                return 'Please enter a valid integer';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: controller.isCreatingInventory ? null : controller.createInventoryItem,
+                            child: controller.isCreatingInventory
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(color: Colors.white),
+                                  )
+                                : const Text('Create Item'),
+                          ),
+                        ],
                       ),
-                    TextFormField(
-                      controller: _itemNameController,
-                      decoration: const InputDecoration(labelText: 'Product Name'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter product name';
-                        }
-                        return null;
-                      },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _itemCostPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Cost Price'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter cost price';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _itemSalesPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Sales Price'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter sales price';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _eanCodeController,
-                      decoration: const InputDecoration(labelText: 'EAN Code'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _aboutProductController,
-                      decoration: const InputDecoration(labelText: 'About Product'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _productSpecificationController,
-                      decoration: const InputDecoration(labelText: 'Product Specification'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _imageLinkController,
-                      decoration: const InputDecoration(labelText: 'Image Link'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _stockController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Stock'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter stock';
-                        }
-                        if (int.tryParse(value) == null) {
-                          return 'Please enter a valid integer';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isCreatingInventory ? null : _createInventoryItem, // Removed context from function call
-                      child: _isCreatingInventory
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white),
-                            )
-                          : const Text('Create Item'),
-                    ),
-                  ],
-                ),
-              )
-            : const SizedBox.shrink()),
+                  )
+                : const SizedBox.shrink();
+          }),
+        ),
       ),
     );
   }
