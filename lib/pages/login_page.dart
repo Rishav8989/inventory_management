@@ -1,7 +1,8 @@
 // login_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:inventory_management/controller/auth_controller.dart'; // Import AuthController
+import 'package:inventory_management/controller/auth_controller.dart';
+import 'package:inventory_management/widgets/login/registration_page.dart'; // Import AuthController
 
 class LoginPage extends GetView<AuthController> { // Use GetView and inject AuthController
   const LoginPage({super.key});
@@ -105,6 +106,18 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                               ),
                             )
                           : const Text('Login')),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ConstrainedBox(
+                    // Added to wrap TextButton
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: TextButton(
+                      onPressed: () {
+                        // Navigate to registration page using GetX
+                        Get.to(() => const RegistrationPage());
+                      },
+                      child: const Text('Don\'t have an account? Register'),
                     ),
                   ),
                 ],
