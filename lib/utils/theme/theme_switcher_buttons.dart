@@ -12,7 +12,7 @@ class ThemeToggleButton extends StatelessWidget {
     return Obx(() {
       bool isDarkMode = themeController.currentTheme == AppTheme.dark;
       return IconButton(
-        icon: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode),
+        icon: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
         tooltip: isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
         onPressed: () {
           isDarkMode
