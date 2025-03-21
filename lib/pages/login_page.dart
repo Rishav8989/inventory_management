@@ -41,10 +41,12 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email or Username',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.email),
+                      border: OutlineInputBorder( // Add rounded border
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -65,10 +67,12 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      border: OutlineInputBorder( // Add rounded border
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -97,6 +101,11 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                           );
                         }
                       },
+                      style: ElevatedButton.styleFrom( // Add rounded border to button
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
                       child: Obx(() => controller.isLoading.value
                           ? const SizedBox(
                               height: 20,
