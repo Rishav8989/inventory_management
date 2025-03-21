@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:inventory_management/controller/home_controller.dart';
-import 'package:inventory_management/pages/account/select_language.dart';
-import 'package:inventory_management/utils/translation/language_selector.dart';
 import 'package:inventory_management/utils/theme/theme_switcher_buttons.dart';
 import 'package:inventory_management/widgets/bottom_navigation.dart';
-import 'package:inventory_management/widgets/login/logout_button.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key});
