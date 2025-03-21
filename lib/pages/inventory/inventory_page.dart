@@ -66,18 +66,33 @@ class _InventoryPageState extends State<InventoryPage> {
     if (_searchQuery.isEmpty) {
       results = _inventoryItems.take(_displayedItemCount).toList();
     } else {
-      results = _inventoryItems
-          .where((item) =>
-              item.getStringValue('product_name').toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.getStringValue('EAN_code').toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.getStringValue('about_product').toLowerCase().contains(_searchQuery.toLowerCase()))
-          .take(_displayedItemCount)
-          .toList();
+      results =
+          _inventoryItems
+              .where(
+                (item) =>
+                    item
+                        .getStringValue('product_name')
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase()) ||
+                    item
+                        .getStringValue('EAN_code')
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase()) ||
+                    item
+                        .getStringValue('about_product')
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase()),
+              )
+              .take(_displayedItemCount)
+              .toList();
     }
 
     setState(() {
       _filteredInventoryItems = results;
-      _hasMoreToLoad = _searchQuery.isEmpty ? _inventoryItems.length > _displayedItemCount : false;
+      _hasMoreToLoad =
+          _searchQuery.isEmpty
+              ? _inventoryItems.length > _displayedItemCount
+              : false;
     });
   }
 
@@ -85,12 +100,14 @@ class _InventoryPageState extends State<InventoryPage> {
     setState(() {
       _displayedItemCount += _loadMoreIncrement;
       _filterInventoryItems();
-      _hasMoreToLoad = _searchQuery.isEmpty && _inventoryItems.length > _displayedItemCount;
+      _hasMoreToLoad =
+          _searchQuery.isEmpty && _inventoryItems.length > _displayedItemCount;
     });
   }
 
   void _showItemDetailsBottomSheet(RecordModel item) {
-    Get.bottomSheet( // Use Get.bottomSheet
+    Get.bottomSheet(
+      // Use Get.bottomSheet
       InventoryItemBottomSheet(
         item: item,
         onRefresh: _controller.fetchInventoryItems,
@@ -116,10 +133,41 @@ class _InventoryPageState extends State<InventoryPage> {
               children: [
                 TextFormField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Search items...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        30.0,
+                      ), // Circular border added
+                      borderSide: BorderSide(
+                        color:
+                            Colors.grey.shade400, // Optional: Add border color
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        30.0,
+                      ), // Circular border for enabled state
+                      borderSide: BorderSide(
+                        color:
+                            Colors
+                                .grey
+                                .shade400, // Optional: Border color when not focused
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        30.0,
+                      ), // Circular border when focused
+                      borderSide: const BorderSide(
+                        color: Colors.blue, // Border color when focused
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12.0, // Optional: Padding for height adjustment
+                      horizontal: 16.0,
+                    ),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -130,21 +178,28 @@ class _InventoryPageState extends State<InventoryPage> {
                     });
                   },
                 ),
+
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
-                      onPressed: _isCreatingInventory ? null : () {
-                        _controller.createInventoryItem();
-                      },
-                      child: _isCreatingInventory
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white),
-                            )
-                          : const Text('Create Item'),
+                      onPressed:
+                          _isCreatingInventory
+                              ? null
+                              : () {
+                                _controller.createInventoryItem();
+                              },
+                      child:
+                          _isCreatingInventory
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                              : const Text('Create Item'),
                     ),
                   ],
                 ),
@@ -163,12 +218,13 @@ class _InventoryPageState extends State<InventoryPage> {
                     child: GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 20.0,
-                        mainAxisSpacing: 20.0,
-                        childAspectRatio: 1.0,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 20.0,
+                            mainAxisSpacing: 20.0,
+                            childAspectRatio: 1.0,
+                          ),
                       itemCount: _filteredInventoryItems.length,
                       itemBuilder: (context, index) {
                         final item = _filteredInventoryItems[index];
@@ -181,32 +237,45 @@ class _InventoryPageState extends State<InventoryPage> {
                       },
                     ),
                   ),
-                if (_isLoadingItems && _inventoryItems.isEmpty && _errorMessage.isEmpty)
-                  const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                if (_filteredInventoryItems.isEmpty && _errorMessage.isEmpty && !_isLoadingItems && _searchQuery.isNotEmpty)
+                if (_isLoadingItems &&
+                    _inventoryItems.isEmpty &&
+                    _errorMessage.isEmpty)
+                  const Center(child: CircularProgressIndicator()),
+                if (_filteredInventoryItems.isEmpty &&
+                    _errorMessage.isEmpty &&
+                    !_isLoadingItems &&
+                    _searchQuery.isNotEmpty)
                   const Padding(
                     padding: EdgeInsets.only(top: 20.0),
-                    child: Text('No inventory items found matching your search.'),
+                    child: Text(
+                      'No inventory items found matching your search.',
+                    ),
                   ),
-                if (_inventoryItems.isNotEmpty && _filteredInventoryItems.isEmpty && _errorMessage.isEmpty && _searchQuery.isEmpty)
+                if (_inventoryItems.isNotEmpty &&
+                    _filteredInventoryItems.isEmpty &&
+                    _errorMessage.isEmpty &&
+                    _searchQuery.isEmpty)
                   const Padding(
                     padding: EdgeInsets.only(top: 20.0),
                     child: Text('No inventory items available.'),
                   ),
-                if (_inventoryItems.isNotEmpty && _hasMoreToLoad && _searchQuery.isEmpty)
+                if (_inventoryItems.isNotEmpty &&
+                    _hasMoreToLoad &&
+                    _searchQuery.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 20),
                     child: ElevatedButton(
                       onPressed: _isLoadingItems ? null : _loadMoreItems,
-                      child: _isLoadingItems
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white),
-                            )
-                          : const Text('Load More'),
+                      child:
+                          _isLoadingItems
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                              : const Text('Load More'),
                     ),
                   ),
               ],

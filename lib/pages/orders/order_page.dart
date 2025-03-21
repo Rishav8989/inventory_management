@@ -22,15 +22,42 @@ class CreateOrderPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Search Bar
+                  // Search Bar
                   TextField(
                     controller: controller.searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Search Product Name',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          30.0,
+                        ), // Circular border
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade400, // Optional: Border color
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          30.0,
+                        ), // Circular border for enabled state
+                        borderSide: BorderSide(color: Colors.grey.shade400),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          30.0,
+                        ), // Circular border when focused
+                        borderSide: const BorderSide(
+                          color: Colors.blue, // Border color when focused
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12.0,
+                        horizontal: 16.0,
+                      ),
                     ),
                     onChanged: (value) => controller.filterItems(),
                   ),
+
                   const SizedBox(height: 20),
 
                   // Button Row (Wrap to avoid overflow)
@@ -42,35 +69,39 @@ class CreateOrderPage extends StatelessWidget {
                       children: [
                         // Create Order Button
                         ElevatedButton(
-                          onPressed: controller.cart.isEmpty ||
-                                  controller.isCreatingOrder.value
-                              ? null
-                              : controller.showOrderSummary,
-                          child: controller.isCreatingOrder.value
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Create Order'),
+                          onPressed:
+                              controller.cart.isEmpty ||
+                                      controller.isCreatingOrder.value
+                                  ? null
+                                  : controller.showOrderSummary,
+                          child:
+                              controller.isCreatingOrder.value
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Create Order'),
                         ),
                         // Add Stock Button
                         ElevatedButton(
-                          onPressed: controller.cart.isEmpty ||
-                                  controller.isAddingStock.value
-                              ? null
-                              : controller.showStockAdditionSummary,
-                          child: controller.isAddingStock.value
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Add Stock'),
+                          onPressed:
+                              controller.cart.isEmpty ||
+                                      controller.isAddingStock.value
+                                  ? null
+                                  : controller.showStockAdditionSummary,
+                          child:
+                              controller.isAddingStock.value
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Add Stock'),
                         ),
                       ],
                     ),
