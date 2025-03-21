@@ -1,4 +1,8 @@
 # Inventory Management App - Flutter
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev/)
+[![PocketBase](https://img.shields.io/badge/PocketBase-333333?style=for-the-badge&logo=pocketbase&logoColor=white)](https://pocketbase.io/)
+
+**Connect with me:** [My Website](https://rishavwiki.netlify.app/)
 
 This Flutter application is designed to provide a robust and user-friendly inventory management solution. It leverages various modern Flutter packages and architectural patterns to deliver a seamless experience.
 
