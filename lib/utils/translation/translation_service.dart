@@ -36,7 +36,7 @@ class AccountPage extends StatelessWidget {
               children: <Widget>[
                 GestureDetector(
                   onTap: () {
-                    Get.to(() => const Profile());
+                    Get.to(() => const ProfilePage());
                   },
                   child: Container(
                     height: 140, // Increased height for better spacing
