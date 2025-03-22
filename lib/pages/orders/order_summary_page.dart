@@ -9,11 +9,11 @@ class OrderSummaryPage extends StatelessWidget {
   final List<RecordModel> inventoryItems;
 
   const OrderSummaryPage({
-    Key? key,
+    super.key,
     required this.cartItems,
     required this.onConfirmOrder,
     required this.inventoryItems,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

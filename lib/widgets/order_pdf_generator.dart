@@ -76,7 +76,7 @@ Future<void> generatePdf(Map<RecordModel, int> cartItems, double totalCost) asyn
                   pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Rs. ${price.toStringAsFixed(2)}', textAlign: pw.TextAlign.right)),
                   pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Rs. ${itemTotal.toStringAsFixed(2)}', textAlign: pw.TextAlign.right)),
                 ]);
-              }).toList(),
+              }),
               pw.TableRow(
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(top: pw.BorderSide()),

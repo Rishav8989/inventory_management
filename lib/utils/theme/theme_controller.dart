@@ -16,11 +16,6 @@ class ThemeController extends GetxController {
   final String _themeKey = 'app_theme';
   bool _isThemeLoaded = false; // Track if theme is loaded
 
-  @override
-  void onInit() {
-    super.onInit();
-    // _loadThemeFromPreferences(); // No need to load here anymore, load in main.dart
-  }
 
   // New function to load theme initially in main.dart  <-----  THIS IS THE IMPORTANT PART!
   Future<void> loadInitialTheme() async {

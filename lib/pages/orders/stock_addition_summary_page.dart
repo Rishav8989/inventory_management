@@ -8,11 +8,11 @@ class StockAdditionSummaryPage extends StatelessWidget {
   final List<RecordModel> inventoryItems;
 
   const StockAdditionSummaryPage({
-    Key? key,
+    super.key,
     required this.cartItems,
     required this.onConfirmStockAddition,
     required this.inventoryItems,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

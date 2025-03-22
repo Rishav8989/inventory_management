@@ -2,7 +2,6 @@
 
 import 'package:inventory_management/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pocketbase/pocketbase.dart';
 
 class UserService {
   static const String _userIdKey = 'pb_user_id';
@@ -53,7 +52,7 @@ class UserService {
       print('Logged in User ID: ${pb.authStore.record!.id}');
     } catch (e) {
       print('Login error: $e');
-      throw e; // Rethrow the error for handling in the UI
+      rethrow; // Rethrow the error for handling in the UI
     }
   }
 

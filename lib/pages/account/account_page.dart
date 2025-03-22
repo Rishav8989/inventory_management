@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:inventory_management/pages/account/about_page.dart';
 import 'package:inventory_management/pages/account/chat_page.dart';
 import 'package:inventory_management/pages/account/profile.dart';
-import 'package:inventory_management/pages/account/select_language.dart';
 import 'package:inventory_management/utils/translation/language_selector.dart';
 import 'package:inventory_management/widgets/logout_button.dart';
 import 'package:url_launcher/url_launcher.dart';

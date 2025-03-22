@@ -9,9 +9,9 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-    final TextEditingController _emailController = TextEditingController(text: 'temp@mail.com');
-    final TextEditingController _passwordController = TextEditingController(text: 'Temp@mail');
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final TextEditingController emailController = TextEditingController(text: 'temp@mail.com');
+    final TextEditingController passwordController = TextEditingController(text: 'Temp@mail');
 
     const double maxWidth = 400.0;
 
@@ -23,7 +23,7 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: maxWidth),
               child: Column(
@@ -39,7 +39,7 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                         )
                       : const SizedBox.shrink()),
                   TextFormField(
-                    controller: _emailController,
+                    controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Email or Username',
@@ -55,17 +55,17 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                       return null;
                     },
                     onFieldSubmitted: (value) {
-                      if (_formKey.currentState!.validate()) {
+                      if (formKey.currentState!.validate()) {
                         controller.login(
-                          _emailController.text,
-                          _passwordController.text,
+                          emailController.text,
+                          passwordController.text,
                         );
                       }
                     },
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    controller: _passwordController,
+                    controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       labelText: 'Password',
@@ -81,10 +81,10 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                       return null;
                     },
                     onFieldSubmitted: (value) {
-                      if (_formKey.currentState!.validate()) {
+                      if (formKey.currentState!.validate()) {
                         controller.login(
-                          _emailController.text,
-                          _passwordController.text,
+                          emailController.text,
+                          passwordController.text,
                         );
                       }
                     },
@@ -94,10 +94,10 @@ class LoginPage extends GetView<AuthController> { // Use GetView and inject Auth
                     width: maxWidth,
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                        if (formKey.currentState!.validate()) {
                           controller.login(
-                            _emailController.text,
-                            _passwordController.text,
+                            emailController.text,
+                            passwordController.text,
                           );
                         }
                       },

@@ -15,13 +15,13 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  bool _isCreatingInventory = false;
+  final bool _isCreatingInventory = false;
   String _errorMessage = '';
   List<RecordModel> _inventoryItems = [];
   List<RecordModel> _filteredInventoryItems = [];
   bool _isLoadingItems = false;
   int _displayedItemCount = 10;
-  int _loadMoreIncrement = 10;
+  final int _loadMoreIncrement = 10;
   bool _hasMoreToLoad = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
