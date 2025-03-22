@@ -10,7 +10,7 @@ This Flutter application is designed to provide a robust and user-friendly inven
 
 Here's a quick demonstration of the app's current features:
 
-<video src="assets/demo.mp4" controls="controls" width="640" height="360">
+<video src="assets/screen-20250322-054823.mp4" controls="controls">
   Your browser does not support the video tag.
 </video>
 
