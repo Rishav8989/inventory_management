@@ -6,6 +6,15 @@
 
 This Flutter application is designed to provide a robust and user-friendly inventory management solution. It leverages various modern Flutter packages and architectural patterns to deliver a seamless experience.
 
+## Demo Video
+
+Here's a quick demonstration of the app's current features:
+
+<video src="assets/demo.mp4" controls="controls" width="640" height="360">
+  Your browser does not support the video tag.
+</video>
+
+
 ## Features
 
 This application boasts a rich set of features, including:
