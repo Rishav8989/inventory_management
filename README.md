@@ -10,9 +10,10 @@ This Flutter application is designed to provide a robust and user-friendly inven
 
 Here's a quick demonstration of the app's current features:
 
-<video src="assets/screen-20250322-054823.mp4" controls="controls">
-  Your browser does not support the video tag.
-</video>
+
+https://github.com/user-attachments/assets/ea22581f-b3e1-4b9e-a68c-cb7819cd2a20
+
+
 
 ![video](assets/screen-20250322-054823.mp4)
 
