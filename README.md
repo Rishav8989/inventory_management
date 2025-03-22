@@ -10,13 +10,8 @@ This Flutter application is designed to provide a robust and user-friendly inven
 
 Here's a quick demonstration of the app's current features:
 
-
-
 https://github.com/user-attachments/assets/c11edfee-6055-45f5-aed7-71e70aa52216
 
-
-
-![video](assets/screen-20250322-054823.mp4)
 
 ## Features
 
