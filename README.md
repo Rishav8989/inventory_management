@@ -14,6 +14,7 @@ Here's a quick demonstration of the app's current features:
   Your browser does not support the video tag.
 </video>
 
+![video](assets/screen-20250322-054823.mp4)
 
 ## Features
 
